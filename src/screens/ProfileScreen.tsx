@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, Platform,
 } from 'react-native';
-import { Colors, Typography, Radius } from '../theme';
+import { Colors, Typography, Radius, isLightMode } from '../theme';
 import BottomNav from '../components/BottomNav';
+import { clearAuth } from '../navigation/AppNavigator';
 
 const STATS = [
   { label: 'Stories\nStarted', value: '7' },
@@ -17,11 +18,41 @@ const RECENT = [
   { title: 'Shadows in the Loam', progress: 100, genre: 'Fantasy', bg: '#0E1318' },
 ];
 
+const ACCOUNT_ITEMS = [
+  { icon: '◎', label: 'Edit Profile' },
+  { icon: '🔔', label: 'Notifications' },
+  { icon: '🔒', label: 'Privacy & Security' },
+];
+
 export default function ProfileScreen({ navigation }: any) {
+  const [darkMode, setDarkMode] = useState(!isLightMode);
+
+  const handleThemeToggle = () => {
+    const next = !darkMode;
+    setDarkMode(next);
+    if (Platform.OS === 'web') {
+      try {
+        if (next) {
+          localStorage.removeItem('messmer_theme');
+        } else {
+          localStorage.setItem('messmer_theme', 'light');
+        }
+        // Reload so theme.ts re-evaluates Colors at module init
+        setTimeout(() => { (window as any).location.reload(); }, 150);
+      } catch {}
+    }
+  };
+
+  const handleLogOut = () => {
+    clearAuth();
+    navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
+
+        {/* ── Header ── */}
         <View style={styles.heroHeader}>
           <View style={styles.heroBg} />
           <View style={styles.heroBorder} />
@@ -50,7 +81,7 @@ export default function ProfileScreen({ navigation }: any) {
           </View>
         </View>
 
-        {/* Reading in Progress */}
+        {/* ── Currently Reading ── */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>CURRENTLY READING</Text>
           {RECENT.map((r, i) => (
@@ -68,7 +99,7 @@ export default function ProfileScreen({ navigation }: any) {
                 <Text style={styles.readingGenre}>{r.genre.toUpperCase()}</Text>
                 <Text style={styles.readingTitle} numberOfLines={2}>{r.title}</Text>
                 <View style={styles.progressTrack}>
-                  <View style={[styles.progressFill, { width: `${r.progress}%` }]} />
+                  <View style={[styles.progressFill, { width: `${r.progress}%` as any }]} />
                 </View>
                 <Text style={styles.progressPct}>{r.progress}% complete</Text>
               </View>
@@ -77,21 +108,15 @@ export default function ProfileScreen({ navigation }: any) {
           ))}
         </View>
 
-        {/* Settings List */}
+        {/* ── Account ── */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>ACCOUNT</Text>
           <View style={styles.settingsList}>
-            {[
-              { icon: '◎', label: 'Edit Profile', screen: 'Profile' },
-              { icon: '🔔', label: 'Notifications', screen: 'Profile' },
-              { icon: '🔒', label: 'Privacy & Security', screen: 'Profile' },
-              { icon: '📚', label: 'My Library', screen: 'StoryList' },
-              { icon: '⭐', label: 'Subscription', screen: 'Profile' },
-            ].map((item) => (
+            {ACCOUNT_ITEMS.map((item, i) => (
               <TouchableOpacity
                 key={item.label}
-                style={styles.settingsRow}
-                onPress={() => navigation.navigate(item.screen)}
+                style={[styles.settingsRow, i === ACCOUNT_ITEMS.length - 1 && styles.settingsRowLast]}
+                activeOpacity={0.7}
               >
                 <Text style={styles.settingsIcon}>{item.icon}</Text>
                 <Text style={styles.settingsLabel}>{item.label}</Text>
@@ -101,34 +126,34 @@ export default function ProfileScreen({ navigation }: any) {
           </View>
         </View>
 
-        {/* Theme Group */}
+        {/* ── Appearance ── */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>APPEARANCE</Text>
           <View style={styles.settingsList}>
-            <TouchableOpacity style={styles.settingsRow} onPress={() => navigation.navigate('ThemeSelect')}>
-              <Text style={styles.settingsIcon}>🎨</Text>
-              <Text style={styles.settingsLabel}>Select Theme</Text>
-              <Text style={styles.settingsArrow}>›</Text>
-            </TouchableOpacity>
-            <View style={styles.settingsRow}>
-              <Text style={styles.settingsIcon}>🌙</Text>
-              <Text style={styles.settingsLabel}>Dark Mode</Text>
-              <View style={styles.toggle}>
-                <View style={styles.toggleThumb} />
+            <TouchableOpacity
+              style={[styles.settingsRow, styles.settingsRowLast]}
+              onPress={handleThemeToggle}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.settingsIcon}>{darkMode ? '🌙' : '☀️'}</Text>
+              <Text style={styles.settingsLabel}>{darkMode ? 'Dark Mode' : 'Light Mode'}</Text>
+              {/* Toggle pill */}
+              <View style={[styles.toggle, darkMode && styles.toggleActive]}>
+                <View style={[styles.toggleThumb, darkMode && styles.toggleThumbRight]} />
               </View>
-            </View>
+            </TouchableOpacity>
           </View>
         </View>
 
-        {/* Danger Zone */}
+        {/* ── Danger zone ── */}
         <View style={styles.section}>
           <View style={styles.dangerCard}>
-            <TouchableOpacity style={styles.dangerRow}>
+            <TouchableOpacity style={styles.dangerRow} onPress={handleLogOut} activeOpacity={0.7}>
               <Text style={styles.dangerIcon}>⬡</Text>
               <Text style={styles.dangerLabel}>Log Out</Text>
             </TouchableOpacity>
             <View style={styles.settingsDivider} />
-            <TouchableOpacity style={styles.dangerRow} onPress={() => navigation.navigate('Login')}>
+            <TouchableOpacity style={styles.dangerRow} activeOpacity={0.7}>
               <Text style={styles.dangerIcon}>↩</Text>
               <Text style={[styles.dangerLabel, { color: Colors.danger }]}>Delete Account</Text>
             </TouchableOpacity>
@@ -202,39 +227,47 @@ const styles = StyleSheet.create({
   readingInfo: { flex: 1, gap: 5 },
   readingGenre: { color: Colors.textMuted, fontSize: Typography.sizes.xs, letterSpacing: 2 },
   readingTitle: { color: Colors.text, fontSize: Typography.sizes.md, fontFamily: Typography.fontSerif, lineHeight: 20 },
-  progressTrack: { height: 2, backgroundColor: Colors.border, borderRadius: 1, overflow: 'hidden' },
-  progressFill: { height: '100%', backgroundColor: Colors.gold },
+  progressTrack: { height: 2, backgroundColor: Colors.border, borderRadius: 1, overflow: 'hidden' as any },
+  progressFill: { height: '100%' as any, backgroundColor: Colors.gold },
   progressPct: { color: Colors.textMuted, fontSize: 10, letterSpacing: 0.5 },
   chevron: { color: Colors.textMuted, fontSize: 22 },
 
   settingsList: {
     borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.md,
-    backgroundColor: Colors.backgroundCard, overflow: 'hidden',
+    backgroundColor: Colors.backgroundCard, overflow: 'hidden' as any,
   },
   settingsRow: {
     flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, paddingVertical: 14,
     borderBottomWidth: 1, borderBottomColor: Colors.border, gap: 14,
   },
+  settingsRowLast: { borderBottomWidth: 0 },
   settingsIcon: { fontSize: 16, width: 22 },
   settingsLabel: { color: Colors.text, fontSize: Typography.sizes.md, flex: 1 },
   settingsArrow: { color: Colors.textMuted, fontSize: 20 },
+
+  // Toggle pill
   toggle: {
     width: 44, height: 24, borderRadius: 12,
-    backgroundColor: Colors.gold, justifyContent: 'center', paddingHorizontal: 3,
+    backgroundColor: Colors.border,
+    justifyContent: 'center', paddingHorizontal: 3,
   },
-  toggleThumb: { width: 18, height: 18, borderRadius: 9, backgroundColor: Colors.background, alignSelf: 'flex-end' },
-  themeCircle: { width: 22, height: 22, borderRadius: 11, borderWidth: 1, borderColor: Colors.border },
-  activeTheme: { color: Colors.gold, fontSize: Typography.sizes.xs, letterSpacing: 1 },
+  toggleActive: { backgroundColor: Colors.gold },
+  toggleThumb: {
+    width: 18, height: 18, borderRadius: 9,
+    backgroundColor: Colors.background,
+    alignSelf: 'flex-start',
+  },
+  toggleThumbRight: { alignSelf: 'flex-end' },
+
   settingsDivider: { height: 1, backgroundColor: Colors.border },
 
   dangerCard: {
     borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.md,
-    backgroundColor: Colors.backgroundCard, overflow: 'hidden',
+    backgroundColor: Colors.backgroundCard, overflow: 'hidden' as any,
   },
   dangerRow: {
     flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, paddingVertical: 14, gap: 14,
   },
   dangerIcon: { fontSize: 16, width: 22, color: Colors.textSecondary },
   dangerLabel: { color: Colors.textSecondary, fontSize: Typography.sizes.md },
-  danger: { color: Colors.danger },
 });

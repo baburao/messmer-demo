@@ -1,4 +1,4 @@
-export const Colors = {
+const DARK_COLORS = {
   background: '#0A0A0A',
   backgroundSecondary: '#111111',
   backgroundCard: '#161616',
@@ -17,6 +17,41 @@ export const Colors = {
   overlay: 'rgba(0,0,0,0.6)',
   overlayDark: 'rgba(0,0,0,0.85)',
 };
+
+const LIGHT_COLORS = {
+  background: '#F5F0E8',
+  backgroundSecondary: '#EDE8DE',
+  backgroundCard: '#E8E2D8',
+  surface: '#DDD7CC',
+  surfaceLight: '#D2CCBF',
+  border: '#C8C0B0',
+  borderGold: '#C9A84C',
+  gold: '#A07830',
+  goldLight: '#C9A84C',
+  goldDark: '#7A5A20',
+  text: '#1A1612',
+  textSecondary: '#5A5040',
+  textMuted: '#9A9080',
+  white: '#FFFFFF',
+  danger: '#C0392B',
+  overlay: 'rgba(0,0,0,0.3)',
+  overlayDark: 'rgba(0,0,0,0.6)',
+};
+
+// Read preference at module load time so all imports pick the right palette.
+// On toggle, we write to localStorage and reload — no context needed.
+const _isLight = (() => {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      return localStorage.getItem('messmer_theme') === 'light';
+    }
+  } catch {}
+  return false;
+})();
+
+export const Colors = _isLight ? LIGHT_COLORS : DARK_COLORS;
+
+export const isLightMode = _isLight;
 
 export const Typography = {
   fontSerif: 'Georgia',
