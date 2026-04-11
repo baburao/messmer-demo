@@ -18,6 +18,8 @@ import GameplayCompleteScreen from '../screens/GameplayCompleteScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import ThemeSelectScreen from '../screens/ThemeSelectScreen';
 import WatchDetailScreen from '../screens/WatchDetailScreen';
+import QuestScreen from '../screens/QuestScreen';
+import QuestCompleteScreen from '../screens/QuestCompleteScreen';
 
 const Stack = createStackNavigator();
 
@@ -90,6 +92,8 @@ export default function AppNavigator() {
         <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen name="ThemeSelect" component={ThemeSelectScreen} />
         <Stack.Screen name="WatchDetail" component={WatchDetailScreen} />
+        <Stack.Screen name="QuestScreen" component={QuestScreen} />
+        <Stack.Screen name="QuestComplete" component={QuestCompleteScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

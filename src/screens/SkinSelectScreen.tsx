@@ -1,87 +1,133 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, Image, ScrollView,
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  Platform,
+  StatusBar,
+  SafeAreaView,
+  Dimensions,
 } from 'react-native';
-import { Colors, Typography, Radius } from '../theme';
-import { saveQuestSetup } from '../navigation/AppNavigator';
+import { Colors, Typography, Radius, Spacing } from '../theme';
+import { CHARACTER_SKINS, CHARACTERS, CharacterSkin } from '../services/aiService';
 
-const THEMES = [
-  {
-    id: 'neon',
-    name: 'NEON RAIN',
-    desc: 'Cyberpunk city nights, neon-lit alleys, electric tension',
-    image: 'https://images.unsplash.com/photo-1519638399535-1b036603ac77?w=800&q=80',
-  },
-  {
-    id: 'woods',
-    name: 'SILENT WOODS',
-    desc: 'Ancient forests, misty trails, whispers in the dark',
-    image: 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&q=80',
-  },
-];
+const { width } = Dimensions.get('window');
+const SKIN_CARD_WIDTH = (width - Spacing.md * 2 - Spacing.sm) / 2;
 
-export default function SkinSelectScreen({ navigation }: any) {
-  const [selected, setSelected] = useState<string>('neon');
+export default function SkinSelectScreen({ navigation, route }: any) {
+  const { themeId, characterId } = route.params ?? {};
 
-  const handleBeginQuest = () => {
-    saveQuestSetup('themeId', selected);
-    navigation.navigate('StoryExperience', { themeId: selected });
+  const themeChars = CHARACTERS[themeId as keyof typeof CHARACTERS] ?? [];
+  const character = themeChars.find((c: any) => c.id === characterId) ?? themeChars[0];
+
+  const [selectedSkin, setSelectedSkin] = useState<CharacterSkin | null>(null);
+
+  const handleBegin = () => {
+    if (!selectedSkin) return;
+    navigation.navigate('QuestScreen', { themeId, characterId, skinId: selectedSkin.id });
   };
 
   return (
-    <View style={styles.container}>
-      {/* ── Sticky Header ───────────────────────────────── */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>CHOOSE THEME</Text>
-        <View style={{ width: 32 }} />
-      </View>
+    <View style={styles.root}>
+      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
 
-      {/* ── Scrollable Content ──────────────────────────── */}
+      {/* ── Header ── */}
+      <SafeAreaView style={styles.headerSafe}>
+        <View
+          style={[
+            styles.header,
+            Platform.OS === 'web' && (styles.headerWeb as any),
+          ]}
+        >
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.backArrow}>←</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.headerTitle}>CHOOSE YOUR LOOK</Text>
+
+          <View style={styles.backButton} />
+        </View>
+      </SafeAreaView>
+
       <ScrollView
-        style={styles.scroll}
+        style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.subtitle}>
-          Themes set the visual mood of your quest.{'\n'}They work with any story type.
-        </Text>
+        {/* ── Character summary ── */}
+        {character && (
+          <View style={styles.characterSummary}>
+            <Image
+              source={{ uri: character.image }}
+              style={styles.charPortrait}
+              resizeMode="cover"
+            />
+            <View style={styles.charMeta}>
+              <Text style={styles.charName}>{character.name}</Text>
+              <Text style={styles.charRole}>{character.role}</Text>
+              <Text style={styles.charDesc}>{character.description}</Text>
+            </View>
+          </View>
+        )}
 
-        {THEMES.map((theme) => {
-          const isSelected = selected === theme.id;
-          return (
-            <TouchableOpacity
-              key={theme.id}
-              style={[styles.themeCard, isSelected && styles.themeCardSelected]}
-              onPress={() => setSelected(theme.id)}
-              activeOpacity={0.9}
-            >
-              <Image source={{ uri: theme.image }} style={styles.themeImage} resizeMode="cover" />
-              <View style={[styles.themeOverlay, isSelected && styles.themeOverlaySelected]} />
+        <View style={styles.divider} />
 
-              {/* Radio indicator */}
-              <View style={styles.radioWrapper}>
-                <View style={[styles.radio, isSelected && styles.radioSelected]}>
-                  {isSelected && <View style={styles.radioDot} />}
-                </View>
-              </View>
+        {/* ── Skin section label ── */}
+        <Text style={styles.sectionLabel}>CHOOSE YOUR LOOK</Text>
+        <Text style={styles.sectionSub}>Your skin shapes how the world perceives you.</Text>
 
-              {/* Name + desc */}
-              <View style={styles.themeTextBlock}>
-                <Text style={styles.themeName}>{theme.name}</Text>
-                <Text style={styles.themeDesc}>{theme.desc}</Text>
-              </View>
-            </TouchableOpacity>
-          );
-        })}
+        {/* ── 2x2 grid of skins ── */}
+        <View style={styles.skinGrid}>
+          {CHARACTER_SKINS.map(skin => {
+            const isSelected = selectedSkin?.id === skin.id;
+            return (
+              <TouchableOpacity
+                key={skin.id}
+                activeOpacity={0.85}
+                onPress={() => setSelectedSkin(skin)}
+                style={[
+                  styles.skinCard,
+                  { backgroundColor: skin.accent },
+                  isSelected && styles.skinCardSelected,
+                ]}
+              >
+                {/* Gold ring indicator */}
+                {isSelected && <View style={styles.skinRing} />}
+
+                <Text style={styles.skinName}>{skin.name.toUpperCase()}</Text>
+                <Text style={styles.skinDesc}>{skin.description}</Text>
+
+                {isSelected && (
+                  <View style={styles.skinCheckBadge}>
+                    <Text style={styles.skinCheckIcon}>✓</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        <View style={{ height: 120 }} />
       </ScrollView>
 
-      {/* ── Sticky Footer CTA ───────────────────────────── */}
+      {/* ── Bottom CTA ── */}
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.beginBtn} onPress={handleBeginQuest} activeOpacity={0.85}>
-          <Text style={styles.beginBtnText}>BEGIN QUEST  →</Text>
+        <TouchableOpacity
+          style={[styles.beginButton, !selectedSkin && styles.beginButtonDisabled]}
+          onPress={handleBegin}
+          disabled={!selectedSkin}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.beginText, !selectedSkin && styles.beginTextDisabled]}>
+            BEGIN QUEST →
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -89,65 +135,207 @@ export default function SkinSelectScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingTop: 54, paddingBottom: 16,
+  root: {
+    flex: 1,
     backgroundColor: Colors.background,
-    borderBottomWidth: 1, borderBottomColor: Colors.border,
-  },
-  backBtn: { width: 32, height: 32, justifyContent: 'center' },
-  backIcon: { color: Colors.gold, fontSize: 22 },
-  headerTitle: { color: Colors.gold, fontSize: 13, letterSpacing: 3, fontWeight: '700' },
-
-  scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16 },
-
-  subtitle: {
-    color: Colors.textSecondary, fontSize: 13, lineHeight: 20,
-    textAlign: 'center', marginBottom: 20,
   },
 
-  themeCard: {
-    width: '100%', height: 190, borderRadius: Radius.md,
-    overflow: 'hidden', marginBottom: 14,
-    borderWidth: 2, borderColor: Colors.border,
-    justifyContent: 'flex-end',
+  // ── Header ──
+  headerSafe: {
+    backgroundColor: Colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    zIndex: 10,
   },
-  themeCardSelected: { borderColor: Colors.gold },
-  themeImage: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
-  themeOverlay: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
+    paddingTop:
+      Platform.OS === 'android'
+        ? (StatusBar.currentHeight ?? 0) + Spacing.md
+        : Spacing.md,
   },
-  themeOverlaySelected: { backgroundColor: 'rgba(0,0,0,0.2)' },
+  headerWeb: {
+    backdropFilter: 'blur(18px)',
+    backgroundColor: 'rgba(10,10,10,0.85)',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backArrow: {
+    fontSize: 22,
+    color: Colors.gold,
+  },
+  headerTitle: {
+    fontSize: Typography.sizes.sm,
+    color: Colors.text,
+    letterSpacing: 3,
+    fontWeight: '700',
+  },
 
-  radioWrapper: { position: 'absolute', top: 12, right: 12 },
-  radio: {
-    width: 22, height: 22, borderRadius: 11,
-    borderWidth: 2, borderColor: 'rgba(255,255,255,0.5)',
-    alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.4)',
+  // ── Scroll ──
+  scrollView: {
+    flex: 1,
   },
-  radioSelected: { borderColor: Colors.gold },
-  radioDot: { width: 11, height: 11, borderRadius: 6, backgroundColor: Colors.gold },
-
-  themeTextBlock: { padding: 16 },
-  themeName: {
-    color: Colors.text, fontSize: 18,
-    fontFamily: Typography.fontSerif, letterSpacing: 3, fontWeight: '700',
-    textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4,
-  },
-  themeDesc: {
-    color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 3,
-    textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3,
+  scrollContent: {
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.lg,
   },
 
-  footer: { padding: 20, paddingBottom: 36, backgroundColor: Colors.background },
-  beginBtn: {
-    backgroundColor: Colors.gold, borderRadius: Radius.md,
-    paddingVertical: 18, alignItems: 'center',
+  // ── Character summary ──
+  characterSummary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.lg,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
-  beginBtnText: { color: Colors.background, fontSize: 14, letterSpacing: 3, fontWeight: '700' },
+  charPortrait: {
+    width: 64,
+    height: 64,
+    borderRadius: Radius.md,
+    marginRight: Spacing.md,
+  },
+  charMeta: {
+    flex: 1,
+  },
+  charName: {
+    fontSize: Typography.sizes.lg,
+    fontFamily: Typography.fontSerif,
+    color: Colors.text,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  charRole: {
+    fontSize: Typography.sizes.xs,
+    color: Colors.gold,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  charDesc: {
+    fontSize: Typography.sizes.xs,
+    color: Colors.textSecondary,
+    lineHeight: 16,
+  },
+
+  divider: {
+    height: 1,
+    backgroundColor: Colors.border,
+    marginBottom: Spacing.lg,
+  },
+
+  // ── Section labels ──
+  sectionLabel: {
+    fontSize: Typography.sizes.xs,
+    color: Colors.gold,
+    letterSpacing: 2.5,
+    fontWeight: '700',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  sectionSub: {
+    fontSize: Typography.sizes.xs,
+    color: Colors.textMuted,
+    textAlign: 'center',
+    marginBottom: Spacing.lg,
+  },
+
+  // ── Skin grid ──
+  skinGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+  },
+  skinCard: {
+    width: SKIN_CARD_WIDTH,
+    minHeight: 130,
+    borderRadius: Radius.lg,
+    padding: Spacing.md,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  skinCardSelected: {
+    borderColor: Colors.gold,
+  },
+  skinRing: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: Radius.lg,
+    borderWidth: 2,
+    borderColor: Colors.gold,
+  },
+  skinName: {
+    fontSize: Typography.sizes.xl,
+    fontFamily: Typography.fontSerif,
+    color: Colors.text,
+    fontWeight: '700',
+    letterSpacing: 1.5,
+    marginBottom: 6,
+  },
+  skinDesc: {
+    fontSize: Typography.sizes.xs,
+    color: Colors.textSecondary,
+    lineHeight: 16,
+  },
+  skinCheckBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 24,
+    height: 24,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.gold,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  skinCheckIcon: {
+    fontSize: 12,
+    color: Colors.background,
+    fontWeight: '700',
+  },
+
+  // ── Footer ──
+  footer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: Colors.background,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
+    paddingBottom: Platform.OS === 'ios' ? 34 : Spacing.md,
+  },
+  beginButton: {
+    backgroundColor: Colors.gold,
+    borderRadius: Radius.md,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  beginButtonDisabled: {
+    backgroundColor: Colors.border,
+  },
+  beginText: {
+    fontSize: Typography.sizes.sm,
+    color: Colors.background,
+    fontWeight: '700',
+    letterSpacing: 2.5,
+  },
+  beginTextDisabled: {
+    color: Colors.textMuted,
+  },
 });

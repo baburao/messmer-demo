@@ -11,7 +11,7 @@ interface Props {
 
 const TABS = [
   { key: 'explore', label: 'EXPLORE', screen: 'Home',      icon: '⊞',  isHuge: false },
-  { key: 'create',  label: 'CREATE',  screen: 'StoryList', icon: '✎',  isHuge: false },
+  { key: 'create',  label: 'CREATE',  screen: 'ThemeSelect', icon: '✎',  isHuge: false },
   { key: 'profile', label: 'PROFILE', screen: 'Profile',   icon: null,  isHuge: true  },
 ];
 

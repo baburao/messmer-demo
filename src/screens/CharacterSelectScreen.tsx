@@ -1,95 +1,118 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, Dimensions, Image,
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  Platform,
+  StatusBar,
+  SafeAreaView,
+  Dimensions,
 } from 'react-native';
-import { Colors, Typography, Radius } from '../theme';
-import { saveQuestSetup } from '../navigation/AppNavigator';
+import { Colors, Typography, Radius, Spacing } from '../theme';
+import { CHARACTERS, Character } from '../services/aiService';
 
 const { width } = Dimensions.get('window');
-const CARD_WIDTH = (width - 60) / 2;
-
-const CHARACTERS = [
-  {
-    id: '1',
-    name: 'THE DRIFT',
-    image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&q=80',
-  },
-  {
-    id: '2',
-    name: 'THE ARCHITECT',
-    image: 'https://images.unsplash.com/photo-1552374196-c4e7ffc6e126?w=400&q=80',
-  },
-];
+const CARD_WIDTH = (width - Spacing.md * 2 - Spacing.sm) / 2;
 
 export default function CharacterSelectScreen({ navigation, route }: any) {
-  const [selected, setSelected] = useState<string | null>(null);
-  const selectedChar = CHARACTERS.find(c => c.id === selected);
+  const { themeId } = route.params ?? {};
+  const characters: Character[] = CHARACTERS[themeId as keyof typeof CHARACTERS] ?? [];
+
+  const [selectedChar, setSelectedChar] = useState<Character | null>(null);
+
+  const handleContinue = () => {
+    if (!selectedChar) return;
+    navigation.navigate('SkinSelect', { themeId, characterId: selectedChar.id });
+  };
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>CHOOSE YOUR CHARACTER</Text>
-      </View>
+    <View style={styles.root}>
+      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
 
-      {/* Character cards — side by side */}
-      <View style={styles.cardsRow}>
-        {CHARACTERS.map((char) => (
+      {/* ── Header ── */}
+      <SafeAreaView style={styles.headerSafe}>
+        <View
+          style={[
+            styles.header,
+            Platform.OS === 'web' && (styles.headerWeb as any),
+          ]}
+        >
           <TouchableOpacity
-            key={char.id}
-            style={[styles.card, selected === char.id && styles.cardSelected]}
-            onPress={() => setSelected(char.id)}
-            activeOpacity={0.85}
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
           >
-            {/* Character image */}
-            <Image
-              source={{ uri: char.image }}
-              style={styles.cardImage}
-              resizeMode="cover"
-            />
-            {/* Dark overlay */}
-            <View style={styles.cardOverlay} />
-
-            {/* Selected checkmark */}
-            {selected === char.id && (
-              <View style={styles.checkBadge}>
-                <Text style={styles.checkIcon}>✓</Text>
-              </View>
-            )}
-
-            {/* Name */}
-            <Text style={styles.charName}>{char.name}</Text>
+            <Text style={styles.backArrow}>←</Text>
           </TouchableOpacity>
-        ))}
-      </View>
 
-      {/* Description */}
-      <View style={styles.descBlock}>
-        <Text style={styles.descText}>
-          EACH CHARACTER HAS UNIQUE DIALOGUE{'\n'}
-          OPTIONS AND STARTING ATTRIBUTES. CHOOSE{'\n'}
-          WISELY, FOR YOUR HISTORY SHAPES YOUR{'\n'}
-          FUTURE.
-        </Text>
-      </View>
+          <Text style={styles.headerTitle}>CHOOSE YOUR CHARACTER</Text>
 
-      {/* Continue button */}
+          <View style={styles.backButton} />
+        </View>
+      </SafeAreaView>
+
+      {/* ── Character grid ── */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.subLabel}>SELECT YOUR AVATAR</Text>
+
+        <View style={styles.grid}>
+          {characters.map(char => {
+            const isSelected = selectedChar?.id === char.id;
+            return (
+              <TouchableOpacity
+                key={char.id}
+                activeOpacity={0.85}
+                onPress={() => setSelectedChar(char)}
+                style={[styles.card, isSelected && styles.cardSelected]}
+              >
+                {/* Portrait */}
+                <Image
+                  source={{ uri: char.image }}
+                  style={styles.portrait}
+                  resizeMode="cover"
+                />
+                <View style={styles.portraitOverlay} />
+
+                {/* Gold checkmark badge */}
+                {isSelected && (
+                  <View style={styles.checkBadge}>
+                    <Text style={styles.checkIcon}>✓</Text>
+                  </View>
+                )}
+
+                {/* Info */}
+                <View style={styles.cardInfo}>
+                  <Text style={styles.charName}>{char.name}</Text>
+                  <Text style={styles.charRole}>{char.role}</Text>
+                  <Text style={styles.charDesc} numberOfLines={1}>
+                    {char.description}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        <View style={{ height: 120 }} />
+      </ScrollView>
+
+      {/* ── Bottom CTA ── */}
       <View style={styles.footer}>
         <TouchableOpacity
-          style={[styles.continueBtn, !selected && styles.continueBtnDisabled]}
-          onPress={() => {
-            if (selected && selectedChar) {
-              saveQuestSetup('characterId', selected);
-              navigation.navigate('SkinSelect', { character: selectedChar });
-            }
-          }}
-          activeOpacity={selected ? 0.8 : 1}
+          style={[styles.continueButton, !selectedChar && styles.continueButtonDisabled]}
+          onPress={handleContinue}
+          disabled={!selectedChar}
+          activeOpacity={0.8}
         >
-          <Text style={[styles.continueBtnText, !selected && styles.continueBtnTextDisabled]}>
-            CONTINUE  ›
+          <Text style={[styles.continueText, !selectedChar && styles.continueTextDisabled]}>
+            CONTINUE →
           </Text>
         </TouchableOpacity>
       </View>
@@ -98,62 +121,169 @@ export default function CharacterSelectScreen({ navigation, route }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#080808' },
+  root: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
 
+  // ── Header ──
+  headerSafe: {
+    backgroundColor: Colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    zIndex: 10,
+  },
   header: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 20, paddingTop: 54, paddingBottom: 30, gap: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
+    paddingTop:
+      Platform.OS === 'android'
+        ? (StatusBar.currentHeight ?? 0) + Spacing.md
+        : Spacing.md,
   },
-  backBtn: { width: 32, height: 32, justifyContent: 'center' },
-  backIcon: { color: Colors.gold, fontSize: 20 },
+  headerWeb: {
+    backdropFilter: 'blur(18px)',
+    backgroundColor: 'rgba(10,10,10,0.85)',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backArrow: {
+    fontSize: 22,
+    color: Colors.gold,
+  },
   headerTitle: {
-    color: Colors.gold, fontSize: Typography.sizes.sm,
-    letterSpacing: 3, fontWeight: '700',
+    fontSize: Typography.sizes.sm,
+    color: Colors.text,
+    letterSpacing: 3,
+    fontWeight: '700',
   },
 
-  cardsRow: {
-    flexDirection: 'row', justifyContent: 'center',
-    gap: 12, paddingHorizontal: 20, marginBottom: 32,
+  // ── Scroll ──
+  scrollView: {
+    flex: 1,
   },
+  scrollContent: {
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.lg,
+  },
+  subLabel: {
+    fontSize: Typography.sizes.xs,
+    color: Colors.textMuted,
+    letterSpacing: 2.5,
+    fontWeight: '600',
+    marginBottom: Spacing.md,
+    textAlign: 'center',
+  },
+
+  // ── Grid ──
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+  },
+
+  // ── Card ──
   card: {
-    width: CARD_WIDTH, height: CARD_WIDTH * 1.45,
-    borderRadius: Radius.md, overflow: 'hidden',
-    borderWidth: 2, borderColor: Colors.border,
-    justifyContent: 'flex-end', alignItems: 'center',
-    paddingBottom: 14,
+    width: CARD_WIDTH,
+    borderRadius: Radius.lg,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
   },
-  cardSelected: { borderColor: Colors.gold },
-  cardImage: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
-  cardOverlay: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+  cardSelected: {
+    borderColor: Colors.gold,
+  },
+  portrait: {
+    width: '100%',
+    height: 160,
+  },
+  portraitOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 160,
+    backgroundColor: 'rgba(0,0,0,0.25)',
   },
   checkBadge: {
-    position: 'absolute', top: 12, right: 12,
-    width: 26, height: 26, borderRadius: 13,
-    backgroundColor: Colors.gold, alignItems: 'center', justifyContent: 'center',
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 26,
+    height: 26,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.gold,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  checkIcon: { color: Colors.background, fontSize: 14, fontWeight: '700' },
+  checkIcon: {
+    fontSize: 13,
+    color: Colors.background,
+    fontWeight: '700',
+  },
+  cardInfo: {
+    padding: Spacing.sm,
+    paddingBottom: Spacing.md,
+  },
   charName: {
-    color: Colors.gold, fontSize: Typography.sizes.sm,
-    letterSpacing: 2, fontWeight: '700', textAlign: 'center',
+    fontSize: Typography.sizes.md,
+    fontFamily: Typography.fontSerif,
+    color: Colors.text,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  charRole: {
+    fontSize: Typography.sizes.xs,
+    color: Colors.gold,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  charDesc: {
+    fontSize: Typography.sizes.xs,
+    color: Colors.textSecondary,
+    lineHeight: 16,
   },
 
-  descBlock: { paddingHorizontal: 32, marginBottom: 'auto' as any },
-  descText: {
-    color: Colors.textSecondary, fontSize: Typography.sizes.xs,
-    letterSpacing: 1, lineHeight: 20, textAlign: 'center',
+  // ── Footer ──
+  footer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: Colors.background,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
+    paddingBottom: Platform.OS === 'ios' ? 34 : Spacing.md,
   },
-
-  footer: { padding: 20, paddingBottom: 36 },
-  continueBtn: {
-    backgroundColor: Colors.gold, borderRadius: Radius.md,
-    paddingVertical: 18, alignItems: 'center',
+  continueButton: {
+    backgroundColor: Colors.gold,
+    borderRadius: Radius.md,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  continueBtnDisabled: { backgroundColor: 'rgba(255,255,255,0.1)' },
-  continueBtnText: {
-    color: Colors.background, fontSize: Typography.sizes.sm,
-    letterSpacing: 3, fontWeight: '700',
+  continueButtonDisabled: {
+    backgroundColor: Colors.border,
   },
-  continueBtnTextDisabled: { color: Colors.textMuted },
+  continueText: {
+    fontSize: Typography.sizes.sm,
+    color: Colors.background,
+    fontWeight: '700',
+    letterSpacing: 2.5,
+  },
+  continueTextDisabled: {
+    color: Colors.textMuted,
+  },
 });
