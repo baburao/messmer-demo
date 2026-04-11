@@ -102,9 +102,9 @@ export default function QuestCompleteScreen({ navigation, route }: any) {
   const handleGenerate = () => {
     if (!selectedFormat || !generatedStory) return;
     if (selectedFormat === 'storybook') {
-      navigation.navigate('StoryDetail', { story: generatedStory });
+      navigation.push('StoryDetail', { story: generatedStory });
     } else {
-      navigation.navigate('WatchDetail', { story: generatedStory });
+      navigation.push('WatchDetail', { story: generatedStory });
     }
   };
 
