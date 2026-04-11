@@ -95,7 +95,8 @@ function ActionBtn({
 
 // ─── Main Screen ──────────────────────────────────────────────────────────
 export default function StoryDetailScreen({ navigation, route }: any) {
-  const story = route?.params?.story;
+  const story      = route?.params?.story;
+  const fromCreate = route?.params?.fromCreate === true;
   const [liked, setLiked]         = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [scrollY, setScrollY]     = useState(0);
@@ -134,9 +135,11 @@ export default function StoryDetailScreen({ navigation, route }: any) {
 
         <View style={styles.stickyInner}>
           {/* Back */}
-          <TouchableOpacity style={styles.stickyBack} onPress={() => navigation.goBack()}>
-            <Text style={styles.stickyBackIcon}>←</Text>
-          </TouchableOpacity>
+          {!fromCreate && (
+            <TouchableOpacity style={styles.stickyBack} onPress={() => navigation.goBack()}>
+              <Text style={styles.stickyBackIcon}>←</Text>
+            </TouchableOpacity>
+          )}
 
           {/* Title */}
           <Text style={styles.stickyTitle} numberOfLines={1}>{title}</Text>
@@ -166,9 +169,11 @@ export default function StoryDetailScreen({ navigation, route }: any) {
           <View style={styles.heroOverlay} />
 
           {/* Back btn inside hero */}
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Text style={styles.backIcon}>←</Text>
-          </TouchableOpacity>
+          {!fromCreate && (
+            <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+              <Text style={styles.backIcon}>←</Text>
+            </TouchableOpacity>
+          )}
 
           {/* Action buttons top-right inside hero */}
           <View style={styles.heroActions}>
@@ -228,9 +233,29 @@ export default function StoryDetailScreen({ navigation, route }: any) {
             </View>
           ))}
 
-          <View style={{ height: 48 }} />
+          <View style={{ height: fromCreate ? 120 : 48 }} />
         </View>
       </ScrollView>
+
+      {/* ── Create flow floating actions ── */}
+      {fromCreate && (
+        <View style={styles.floatingBar}>
+          <TouchableOpacity
+            style={styles.floatBtnSecondary}
+            onPress={() => navigation.navigate('Home')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.floatBtnSecondaryText}>GO TO HOME</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.floatBtnPrimary}
+            onPress={() => navigation.navigate('ThemeSelect')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.floatBtnPrimaryText}>CREATE ANOTHER STORY</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {shareOpen && <ShareSheet onClose={() => setShareOpen(false)} />}
     </View>
@@ -401,6 +426,54 @@ const styles = StyleSheet.create({
     fontFamily: Typography.fontSerif, lineHeight: 22,
   },
   questDesc: { color: Colors.textSecondary, fontSize: 13, lineHeight: 19 },
+
+  // ── Floating create-flow bar ──────────────────────────────────────────
+  floatingBar: {
+    position: 'absolute' as any,
+    bottom: 0, left: 0, right: 0,
+    flexDirection: 'row',
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 28,
+    backgroundColor: 'rgba(10,10,10,0.90)' as any,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(201,168,76,0.2)',
+    ...(Platform.OS === 'web' ? {
+      backdropFilter: 'blur(18px)',
+      WebkitBackdropFilter: 'blur(18px)',
+    } : {}),
+  } as any,
+  floatBtnSecondary: {
+    flex: 1,
+    height: 44,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.06)' as any,
+  },
+  floatBtnSecondaryText: {
+    color: Colors.textSecondary,
+    fontSize: 10,
+    letterSpacing: 1.5,
+    fontWeight: '600',
+  },
+  floatBtnPrimary: {
+    flex: 1.6,
+    height: 44,
+    borderRadius: 8,
+    backgroundColor: Colors.gold,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  floatBtnPrimaryText: {
+    color: '#0A0A0A',
+    fontSize: 10,
+    letterSpacing: 1.5,
+    fontWeight: '700',
+  },
 });
 
 // ─── Share sheet styles ───────────────────────────────────────────────────
