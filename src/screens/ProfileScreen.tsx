@@ -1,10 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Platform,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Colors, Typography, Radius, isLightMode } from '../theme';
 import BottomNav from '../components/BottomNav';
-import { clearAuth } from '../navigation/AppNavigator';
+import { clearAuth, getGeneratedStories } from '../navigation/AppNavigator';
+import { HugeiconsIcon } from '@hugeicons/react';
+import {
+  UserEditIcon,
+  NotificationIcon,
+  ShieldIcon,
+  MoonIcon,
+  SunIcon,
+  LogoutIcon,
+  DeleteIcon,
+  BookOpenIcon,
+  VideoIcon,
+} from '@hugeicons/core-free-icons';
 
 const STATS = [
   { label: 'Stories\nStarted', value: '7' },
@@ -19,13 +32,20 @@ const RECENT = [
 ];
 
 const ACCOUNT_ITEMS = [
-  { icon: '◎', label: 'Edit Profile' },
-  { icon: '🔔', label: 'Notifications' },
-  { icon: '🔒', label: 'Privacy & Security' },
+  { icon: UserEditIcon,    label: 'Edit Profile' },
+  { icon: NotificationIcon, label: 'Notifications' },
+  { icon: ShieldIcon,      label: 'Privacy & Security' },
 ];
 
 export default function ProfileScreen({ navigation }: any) {
   const [darkMode, setDarkMode] = useState(!isLightMode);
+  const [myStories, setMyStories] = useState<any[]>([]);
+
+  useFocusEffect(
+    useCallback(() => {
+      setMyStories(getGeneratedStories());
+    }, [])
+  );
 
   const handleThemeToggle = () => {
     const next = !darkMode;
@@ -37,7 +57,6 @@ export default function ProfileScreen({ navigation }: any) {
         } else {
           localStorage.setItem('messmer_theme', 'light');
         }
-        // Reload so theme.ts re-evaluates Colors at module init
         setTimeout(() => { (window as any).location.reload(); }, 150);
       } catch {}
     }
@@ -46,6 +65,14 @@ export default function ProfileScreen({ navigation }: any) {
   const handleLogOut = () => {
     clearAuth();
     navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+  };
+
+  const handleOpenStory = (story: any) => {
+    if (story.format === 'video') {
+      navigation.navigate('WatchDetail', { story });
+    } else {
+      navigation.navigate('StoryDetail', { story });
+    }
   };
 
   return (
@@ -79,6 +106,60 @@ export default function ProfileScreen({ navigation }: any) {
               </View>
             ))}
           </View>
+        </View>
+
+        {/* ── My Stories ── */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>MY STORIES</Text>
+            {myStories.length > 0 && (
+              <View style={styles.countBadge}>
+                <Text style={styles.countBadgeText}>{myStories.length}</Text>
+              </View>
+            )}
+          </View>
+
+          {myStories.length === 0 ? (
+            <View style={styles.emptyCard}>
+              <HugeiconsIcon icon={BookOpenIcon} size={28} color={Colors.textMuted} />
+              <Text style={styles.emptyTitle}>No stories yet</Text>
+              <Text style={styles.emptyDesc}>Complete a quest to generate your first story</Text>
+              <TouchableOpacity
+                style={styles.emptyBtn}
+                onPress={() => navigation.navigate('ThemeSelect')}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.emptyBtnText}>CREATE A STORY →</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            myStories.map((story, i) => (
+              <TouchableOpacity
+                key={story.id || i}
+                style={styles.myStoryCard}
+                onPress={() => handleOpenStory(story)}
+                activeOpacity={0.8}
+              >
+                <View style={styles.myStoryFormatIcon}>
+                  <HugeiconsIcon
+                    icon={story.format === 'video' ? VideoIcon : BookOpenIcon}
+                    size={18}
+                    color={Colors.gold}
+                  />
+                </View>
+                <View style={styles.myStoryInfo}>
+                  <Text style={styles.myStoryCategory}>{story.category}</Text>
+                  <Text style={styles.myStoryTitle} numberOfLines={1}>{story.title}</Text>
+                  <Text style={styles.myStoryDesc} numberOfLines={1}>{story.desc}</Text>
+                </View>
+                <View style={[styles.formatBadge, story.format === 'video' && styles.formatBadgeVideo]}>
+                  <Text style={styles.formatBadgeText}>
+                    {story.format === 'video' ? 'VIDEO' : 'STORY'}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))
+          )}
         </View>
 
         {/* ── Currently Reading ── */}
@@ -118,7 +199,7 @@ export default function ProfileScreen({ navigation }: any) {
                 style={[styles.settingsRow, i === ACCOUNT_ITEMS.length - 1 && styles.settingsRowLast]}
                 activeOpacity={0.7}
               >
-                <Text style={styles.settingsIcon}>{item.icon}</Text>
+                <HugeiconsIcon icon={item.icon} size={18} color={Colors.textSecondary} />
                 <Text style={styles.settingsLabel}>{item.label}</Text>
                 <Text style={styles.settingsArrow}>›</Text>
               </TouchableOpacity>
@@ -135,9 +216,12 @@ export default function ProfileScreen({ navigation }: any) {
               onPress={handleThemeToggle}
               activeOpacity={0.7}
             >
-              <Text style={styles.settingsIcon}>{darkMode ? '🌙' : '☀️'}</Text>
+              <HugeiconsIcon
+                icon={darkMode ? MoonIcon : SunIcon}
+                size={18}
+                color={Colors.textSecondary}
+              />
               <Text style={styles.settingsLabel}>{darkMode ? 'Dark Mode' : 'Light Mode'}</Text>
-              {/* Toggle pill */}
               <View style={[styles.toggle, darkMode && styles.toggleActive]}>
                 <View style={[styles.toggleThumb, darkMode && styles.toggleThumbRight]} />
               </View>
@@ -149,12 +233,12 @@ export default function ProfileScreen({ navigation }: any) {
         <View style={styles.section}>
           <View style={styles.dangerCard}>
             <TouchableOpacity style={styles.dangerRow} onPress={handleLogOut} activeOpacity={0.7}>
-              <Text style={styles.dangerIcon}>⬡</Text>
+              <HugeiconsIcon icon={LogoutIcon} size={18} color={Colors.textSecondary} />
               <Text style={styles.dangerLabel}>Log Out</Text>
             </TouchableOpacity>
             <View style={styles.settingsDivider} />
             <TouchableOpacity style={styles.dangerRow} activeOpacity={0.7}>
-              <Text style={styles.dangerIcon}>↩</Text>
+              <HugeiconsIcon icon={DeleteIcon} size={18} color={Colors.danger} />
               <Text style={[styles.dangerLabel, { color: Colors.danger }]}>Delete Account</Text>
             </TouchableOpacity>
           </View>
@@ -191,10 +275,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surfaceLight, alignItems: 'center', justifyContent: 'center',
   },
   avatarText: { color: Colors.gold, fontSize: Typography.sizes.xl, fontWeight: '700' },
-  profileName: {
-    color: Colors.text, fontSize: Typography.sizes.xl,
-    fontFamily: Typography.fontSerif,
-  },
+  profileName: { color: Colors.text, fontSize: Typography.sizes.xl, fontFamily: Typography.fontSerif },
   profileEmail: { color: Colors.textSecondary, fontSize: Typography.sizes.sm },
   memberBadge: {
     borderWidth: 1, borderColor: Colors.gold, borderRadius: Radius.full,
@@ -214,7 +295,55 @@ const styles = StyleSheet.create({
 
   section: { paddingHorizontal: 24, paddingTop: 24, gap: 12 },
   sectionTitle: { color: Colors.textMuted, fontSize: Typography.sizes.xs, letterSpacing: 3 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  countBadge: {
+    width: 20, height: 20, borderRadius: 10,
+    backgroundColor: Colors.gold, alignItems: 'center', justifyContent: 'center',
+  },
+  countBadgeText: { color: '#0A0A0A', fontSize: 10, fontWeight: '700' },
 
+  // ── My Stories ──────────────────────────────────────────────────────────
+  emptyCard: {
+    borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.md,
+    backgroundColor: Colors.backgroundCard,
+    alignItems: 'center', paddingVertical: 28, paddingHorizontal: 20, gap: 8,
+  },
+  emptyTitle: { color: Colors.text, fontSize: Typography.sizes.md, fontFamily: Typography.fontSerif, marginTop: 4 },
+  emptyDesc: { color: Colors.textMuted, fontSize: Typography.sizes.sm, textAlign: 'center' },
+  emptyBtn: {
+    marginTop: 8,
+    borderWidth: 1, borderColor: Colors.gold, borderRadius: Radius.md,
+    paddingHorizontal: 16, paddingVertical: 8,
+  },
+  emptyBtnText: { color: Colors.gold, fontSize: 10, letterSpacing: 2, fontWeight: '700' },
+
+  myStoryCard: {
+    flexDirection: 'row', alignItems: 'center',
+    borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.md,
+    backgroundColor: Colors.backgroundCard, padding: 14, gap: 12, marginBottom: 8,
+  },
+  myStoryFormatIcon: {
+    width: 40, height: 40, borderRadius: 8,
+    backgroundColor: 'rgba(201,168,76,0.1)',
+    borderWidth: 1, borderColor: 'rgba(201,168,76,0.25)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  myStoryInfo: { flex: 1, gap: 3 },
+  myStoryCategory: { color: Colors.gold, fontSize: 9, letterSpacing: 2, fontWeight: '700' },
+  myStoryTitle: { color: Colors.text, fontSize: Typography.sizes.md, fontFamily: Typography.fontSerif },
+  myStoryDesc: { color: Colors.textMuted, fontSize: 11 },
+  formatBadge: {
+    paddingHorizontal: 7, paddingVertical: 3,
+    borderRadius: 4, backgroundColor: 'rgba(201,168,76,0.15)',
+    borderWidth: 1, borderColor: 'rgba(201,168,76,0.4)',
+  },
+  formatBadgeVideo: {
+    backgroundColor: 'rgba(100,140,255,0.15)',
+    borderColor: 'rgba(100,140,255,0.4)',
+  },
+  formatBadgeText: { color: Colors.gold, fontSize: 8, letterSpacing: 1.5, fontWeight: '700' },
+
+  // ── Currently Reading ─────────────────────────────────────────────────
   readingCard: {
     flexDirection: 'row', alignItems: 'center', borderRadius: Radius.md,
     borderWidth: 1, borderColor: Colors.border, padding: 14, gap: 14, marginBottom: 10,
@@ -232,6 +361,7 @@ const styles = StyleSheet.create({
   progressPct: { color: Colors.textMuted, fontSize: 10, letterSpacing: 0.5 },
   chevron: { color: Colors.textMuted, fontSize: 22 },
 
+  // ── Settings ─────────────────────────────────────────────────────────
   settingsList: {
     borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.md,
     backgroundColor: Colors.backgroundCard, overflow: 'hidden' as any,
@@ -241,21 +371,17 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: Colors.border, gap: 14,
   },
   settingsRowLast: { borderBottomWidth: 0 },
-  settingsIcon: { fontSize: 16, width: 22 },
   settingsLabel: { color: Colors.text, fontSize: Typography.sizes.md, flex: 1 },
   settingsArrow: { color: Colors.textMuted, fontSize: 20 },
 
-  // Toggle pill
   toggle: {
     width: 44, height: 24, borderRadius: 12,
-    backgroundColor: Colors.border,
-    justifyContent: 'center', paddingHorizontal: 3,
+    backgroundColor: Colors.border, justifyContent: 'center', paddingHorizontal: 3,
   },
   toggleActive: { backgroundColor: Colors.gold },
   toggleThumb: {
     width: 18, height: 18, borderRadius: 9,
-    backgroundColor: Colors.background,
-    alignSelf: 'flex-start',
+    backgroundColor: Colors.background, alignSelf: 'flex-start',
   },
   toggleThumbRight: { alignSelf: 'flex-end' },
 
@@ -268,6 +394,5 @@ const styles = StyleSheet.create({
   dangerRow: {
     flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, paddingVertical: 14, gap: 14,
   },
-  dangerIcon: { fontSize: 16, width: 22, color: Colors.textSecondary },
   dangerLabel: { color: Colors.textSecondary, fontSize: Typography.sizes.md },
 });
