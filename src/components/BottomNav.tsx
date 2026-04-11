@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet, Platform } from 'react-native';
 import { Colors } from '../theme';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { UserCircleIcon } from '@hugeicons/core-free-icons';
 
 interface Props {
   active: 'explore' | 'create' | 'profile';
@@ -8,9 +10,9 @@ interface Props {
 }
 
 const TABS = [
-  { key: 'explore', label: 'EXPLORE', screen: 'Home',      icon: '⊞' },
-  { key: 'create',  label: 'CREATE',  screen: 'StoryList', icon: '✎' },
-  { key: 'profile', label: 'PROFILE', screen: 'Profile',   icon: '⚙' },
+  { key: 'explore', label: 'EXPLORE', screen: 'Home',      icon: '⊞',  isHuge: false },
+  { key: 'create',  label: 'CREATE',  screen: 'StoryList', icon: '✎',  isHuge: false },
+  { key: 'profile', label: 'PROFILE', screen: 'Profile',   icon: null,  isHuge: true  },
 ];
 
 export default function BottomNav({ active, onNavigate }: Props) {
@@ -26,7 +28,15 @@ export default function BottomNav({ active, onNavigate }: Props) {
               onPress={() => onNavigate(tab.screen)}
               activeOpacity={0.7}
             >
-              <Text style={[styles.icon, isActive && styles.activeIcon]}>{tab.icon}</Text>
+              {tab.isHuge ? (
+                <HugeiconsIcon
+                  icon={UserCircleIcon}
+                  size={20}
+                  color={isActive ? Colors.gold : Colors.textMuted}
+                />
+              ) : (
+                <Text style={[styles.icon, isActive && styles.activeIcon]}>{tab.icon}</Text>
+              )}
               <Text style={[styles.label, isActive && styles.activeLabel]}>{tab.label}</Text>
               {isActive && <View style={styles.activePip} />}
             </TouchableOpacity>
@@ -39,10 +49,14 @@ export default function BottomNav({ active, onNavigate }: Props) {
 
 const styles = StyleSheet.create({
   wrapper: {
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: 'rgba(10,10,10,0.82)' as any,
     borderTopWidth: 1,
-    borderTopColor: Colors.border,
-  },
+    borderTopColor: 'rgba(42,42,42,0.6)',
+    ...(Platform.OS === 'web' ? {
+      backdropFilter: 'blur(18px)',
+      WebkitBackdropFilter: 'blur(18px)',
+    } : {}),
+  } as any,
   container: {
     flexDirection: 'row',
     paddingTop: 10,

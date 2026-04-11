@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, Image, Modal, Animated,
+  StyleSheet, Image, Modal, Animated, Platform,
 } from 'react-native';
 import { Colors, Typography, Radius } from '../theme';
 import { HugeiconsIcon } from '@hugeicons/react';
@@ -335,8 +335,12 @@ const styles = StyleSheet.create({
   // Sticky header
   stickyHeader: {
     position: 'absolute' as any, top: 0, left: 0, right: 0, zIndex: 100,
-    backgroundColor: Colors.background,
-  },
+    backgroundColor: 'rgba(10,10,10,0.82)' as any,
+    ...(Platform.OS === 'web' ? {
+      backdropFilter: 'blur(18px)',
+      WebkitBackdropFilter: 'blur(18px)',
+    } : {}),
+  } as any,
   stickyVisible: { opacity: 1 },
   stickyHidden:  { opacity: 0 },
   stickyDivider: { height: 1, backgroundColor: Colors.border },
@@ -354,19 +358,27 @@ const styles = StyleSheet.create({
   backBtn: {
     position: 'absolute' as any, top: 48, left: 16, zIndex: 10,
     width: 36, height: 36, borderRadius: 18,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(0,0,0,0.38)' as any,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
     alignItems: 'center', justifyContent: 'center',
-  },
+    ...(Platform.OS === 'web' ? {
+      backdropFilter: 'blur(10px)',
+      WebkitBackdropFilter: 'blur(10px)',
+    } : {}),
+  } as any,
   backIcon: { color: Colors.text, fontSize: 16 },
 
   // Action buttons (sticky header)
   actionBtn: {
     width: 36, height: 36, borderRadius: 18,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(0,0,0,0.38)' as any,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
     alignItems: 'center', justifyContent: 'center',
-  },
+    ...(Platform.OS === 'web' ? {
+      backdropFilter: 'blur(10px)',
+      WebkitBackdropFilter: 'blur(10px)',
+    } : {}),
+  } as any,
   actionBtnLiked: { borderColor: Colors.gold },
   actionBtnIcon: { color: Colors.text, fontSize: 15 },
   actionBtnIconLiked: { color: Colors.gold },
@@ -386,9 +398,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: 16, paddingVertical: 9,
     borderRadius: Radius.full,
-    backgroundColor: Colors.surface,
-    borderWidth: 1, borderColor: Colors.border,
-  },
+    backgroundColor: 'rgba(26,26,26,0.75)' as any,
+    borderWidth: 1, borderColor: 'rgba(42,42,42,0.8)',
+    ...(Platform.OS === 'web' ? {
+      backdropFilter: 'blur(10px)',
+      WebkitBackdropFilter: 'blur(10px)',
+    } : {}),
+  } as any,
   actionPillLiked: { borderColor: Colors.gold, backgroundColor: 'rgba(201,168,76,0.08)' },
   actionPillIcon: { color: Colors.textSecondary, fontSize: 15 },
   actionPillIconLiked: { color: Colors.gold },
@@ -425,10 +441,14 @@ const styles = StyleSheet.create({
     top: '50%' as any, left: '50%' as any,
     marginTop: -22, marginLeft: -22,
     width: 44, height: 44, borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.5)',
+    backgroundColor: 'rgba(255,255,255,0.12)' as any,
+    borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.4)',
     alignItems: 'center', justifyContent: 'center',
-  },
+    ...(Platform.OS === 'web' ? {
+      backdropFilter: 'blur(8px)',
+      WebkitBackdropFilter: 'blur(8px)',
+    } : {}),
+  } as any,
   epPlayIcon: { color: Colors.text, fontSize: 16, marginLeft: 3 },
   epBottomLeft: {
     position: 'absolute' as any, bottom: 10, left: 12,
@@ -484,8 +504,12 @@ const vp = StyleSheet.create({
   controls: {
     position: 'absolute' as any, bottom: 0, left: 0, right: 0,
     paddingHorizontal: 16, paddingBottom: 14,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
+    backgroundColor: 'rgba(0,0,0,0.45)' as any,
+    ...(Platform.OS === 'web' ? {
+      backdropFilter: 'blur(12px)',
+      WebkitBackdropFilter: 'blur(12px)',
+    } : {}),
+  } as any,
   progressBar: {
     height: 3, backgroundColor: 'rgba(255,255,255,0.25)',
     borderRadius: 2, marginBottom: 6, overflow: 'hidden' as any,

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, Image, StatusBar, Modal, Animated,
+  StyleSheet, Image, StatusBar, Modal, Animated, Platform,
 } from 'react-native';
 import { Colors, Typography, Radius } from '../theme';
 import BottomNav from '../components/BottomNav';
@@ -339,9 +339,13 @@ const styles = StyleSheet.create({
   header: {
     height: 64,
     alignItems: 'center', justifyContent: 'center',
-    backgroundColor: Colors.background,
-    borderBottomWidth: 1, borderBottomColor: Colors.border,
-  },
+    backgroundColor: 'rgba(10,10,10,0.82)' as any,
+    borderBottomWidth: 1, borderBottomColor: 'rgba(42,42,42,0.5)',
+    ...(Platform.OS === 'web' ? {
+      backdropFilter: 'blur(18px)',
+      WebkitBackdropFilter: 'blur(18px)',
+    } : {}),
+  } as any,
   headerTitle: {
     color: Colors.gold, fontSize: 18,
     fontFamily: Typography.fontSerif, letterSpacing: 6,
@@ -375,10 +379,14 @@ const styles = StyleSheet.create({
   },
   actionBtn: {
     width: 34, height: 34, borderRadius: 17,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(0,0,0,0.38)' as any,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
     alignItems: 'center', justifyContent: 'center',
-  },
+    ...(Platform.OS === 'web' ? {
+      backdropFilter: 'blur(10px)',
+      WebkitBackdropFilter: 'blur(10px)',
+    } : {}),
+  } as any,
   actionBtnLiked: {
     backgroundColor: 'rgba(0,0,0,0.45)',
     borderColor: Colors.gold,
