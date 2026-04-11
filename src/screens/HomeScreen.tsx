@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
   StyleSheet, Image, StatusBar, Modal, Animated, Platform,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Colors, Typography, Radius } from '../theme';
 import BottomNav from '../components/BottomNav';
-import { getQuestSetup } from '../navigation/AppNavigator';
+import { getQuestSetup, getGeneratedStories } from '../navigation/AppNavigator';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Share02Icon } from '@hugeicons/core-free-icons';
 
@@ -167,6 +168,19 @@ export default function HomeScreen({ navigation }: any) {
   const [tab, setTab] = useState<'read' | 'watch'>('read');
   const [likedStories, setLikedStories] = useState<Set<string>>(new Set());
   const [shareStory, setShareStory] = useState<any | null>(null);
+  const [generatedStories, setGeneratedStories] = useState<any[]>([]);
+
+  // Reload generated stories every time this screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      setGeneratedStories(getGeneratedStories());
+    }, [])
+  );
+
+  const genRead  = generatedStories.filter(s => s.format === 'storybook');
+  const genWatch = generatedStories.filter(s => s.format === 'video');
+  const readList  = [...genRead,  ...READ_STORIES];
+  const watchList = [...genWatch, ...WATCH_STORIES];
 
   const toggleLike = (id: string) => {
     setLikedStories(prev => {
@@ -220,7 +234,7 @@ export default function HomeScreen({ navigation }: any) {
           showsVerticalScrollIndicator={false}
         >
           {tab === 'read' ? (
-            READ_STORIES.map((story) => {
+            readList.map((story) => {
               const isLiked = likedStories.has(story.id);
               return (
                 <TouchableOpacity
@@ -251,7 +265,10 @@ export default function HomeScreen({ navigation }: any) {
                   </View>
 
                   <View style={styles.heroContent}>
-                    <Text style={styles.heroCategory}>{story.category}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <Text style={styles.heroCategory}>{story.category}</Text>
+                      {story.createdAt && <View style={styles.createdBadge}><Text style={styles.createdBadgeText}>✦ YOURS</Text></View>}
+                    </View>
                     <Text style={styles.heroTitle} numberOfLines={1}>{story.title}</Text>
                     <Text style={styles.heroDesc} numberOfLines={2}>{story.desc}</Text>
                     <TouchableOpacity
@@ -265,7 +282,7 @@ export default function HomeScreen({ navigation }: any) {
               );
             })
           ) : (
-            WATCH_STORIES.map((item) => {
+            watchList.map((item) => {
               const isLiked = likedStories.has(item.id);
               return (
                 <TouchableOpacity
@@ -304,7 +321,10 @@ export default function HomeScreen({ navigation }: any) {
 
                   {/* Content overlay */}
                   <View style={styles.heroContent}>
-                    <Text style={styles.heroCategory}>{item.category}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <Text style={styles.heroCategory}>{item.category}</Text>
+                      {item.createdAt && <View style={styles.createdBadge}><Text style={styles.createdBadgeText}>✦ YOURS</Text></View>}
+                    </View>
                     <Text style={styles.heroTitle} numberOfLines={1}>{item.title}</Text>
                     <Text style={styles.heroDesc} numberOfLines={2}>{item.desc}</Text>
                     <TouchableOpacity
@@ -399,6 +419,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18, paddingTop: 12, paddingBottom: 18, gap: 4,
   },
   heroCategory: { color: Colors.gold, fontSize: 10, letterSpacing: 2 },
+  createdBadge: {
+    paddingHorizontal: 6, paddingVertical: 2,
+    borderRadius: 3,
+    backgroundColor: 'rgba(201,168,76,0.2)',
+    borderWidth: 1, borderColor: 'rgba(201,168,76,0.5)',
+  },
+  createdBadgeText: { color: Colors.gold, fontSize: 8, letterSpacing: 1.5, fontWeight: '700' },
   heroTitle: {
     color: Colors.text, fontSize: 18,
     fontFamily: Typography.fontSerif, lineHeight: 24,

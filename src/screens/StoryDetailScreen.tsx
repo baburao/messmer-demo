@@ -97,6 +97,7 @@ function ActionBtn({
 export default function StoryDetailScreen({ navigation, route }: any) {
   const story      = route?.params?.story;
   const fromCreate = route?.params?.fromCreate === true;
+  const choices    = route?.params?.choices ?? [];
   const [liked, setLiked]         = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [scrollY, setScrollY]     = useState(0);
@@ -198,40 +199,46 @@ export default function StoryDetailScreen({ navigation, route }: any) {
           {/* Story description */}
           <Text style={styles.storyDesc}>{desc}</Text>
 
-          {/* Quests */}
-          <Text style={styles.sectionLabel}>QUESTS</Text>
-
-          {quests.map((quest) => (
-            <View key={quest.id} style={styles.questCard}>
-              {/* Banner image */}
-              <View style={styles.questBanner}>
-                <Image
-                  source={{ uri: quest.image }}
-                  style={styles.questBannerImage}
-                  resizeMode="cover"
-                />
-                <View style={styles.questBannerOverlay} />
-
-                {/* Quest number on image */}
-                <Text style={styles.questNumber}>QUEST {quest.number}</Text>
-
-                {/* Edit icon on image */}
-                <TouchableOpacity
-                  style={styles.editIconBtn}
-                  onPress={() => handleRecreate(quest)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.editIconText}>✎</Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Text content below image */}
-              <View style={styles.questBody}>
-                <Text style={styles.questTitle}>{quest.title}</Text>
-                <Text style={styles.questDesc} numberOfLines={3}>{quest.desc}</Text>
-              </View>
-            </View>
-          ))}
+          {/* Quests / Choices */}
+          {fromCreate && choices.length > 0 ? (
+            <>
+              <Text style={styles.sectionLabel}>
+                YOUR JOURNEY · {choices.length} {choices.length === 1 ? 'CHOICE' : 'CHOICES'}
+              </Text>
+              {choices.map((choice: any, idx: number) => (
+                <View key={idx} style={styles.questCard}>
+                  <View style={styles.questBody}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                      <View style={styles.roundBadge}>
+                        <Text style={styles.roundBadgeText}>ROUND {choice.round}</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.questTitle}>{choice.optionText}</Text>
+                  </View>
+                </View>
+              ))}
+            </>
+          ) : (
+            <>
+              <Text style={styles.sectionLabel}>QUESTS</Text>
+              {quests.map((quest) => (
+                <View key={quest.id} style={styles.questCard}>
+                  <View style={styles.questBanner}>
+                    <Image source={{ uri: quest.image }} style={styles.questBannerImage} resizeMode="cover" />
+                    <View style={styles.questBannerOverlay} />
+                    <Text style={styles.questNumber}>QUEST {quest.number}</Text>
+                    <TouchableOpacity style={styles.editIconBtn} onPress={() => handleRecreate(quest)} activeOpacity={0.8}>
+                      <Text style={styles.editIconText}>✎</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.questBody}>
+                    <Text style={styles.questTitle}>{quest.title}</Text>
+                    <Text style={styles.questDesc} numberOfLines={3}>{quest.desc}</Text>
+                  </View>
+                </View>
+              ))}
+            </>
+          )}
 
           <View style={{ height: fromCreate ? 120 : 48 }} />
         </View>
@@ -426,6 +433,14 @@ const styles = StyleSheet.create({
     fontFamily: Typography.fontSerif, lineHeight: 22,
   },
   questDesc: { color: Colors.textSecondary, fontSize: 13, lineHeight: 19 },
+
+  roundBadge: {
+    paddingHorizontal: 8, paddingVertical: 3,
+    borderRadius: 4,
+    backgroundColor: 'rgba(201,168,76,0.15)',
+    borderWidth: 1, borderColor: 'rgba(201,168,76,0.4)',
+  },
+  roundBadgeText: { color: Colors.gold, fontSize: 9, letterSpacing: 2, fontWeight: '700' },
 
   // ── Floating create-flow bar ──────────────────────────────────────────
   floatingBar: {

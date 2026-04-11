@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Colors, Typography, Radius, Spacing } from '../theme';
 import { generateStory, StoryChoice, OutputFormat } from '../services/aiService';
+import { saveGeneratedStory } from '../navigation/AppNavigator';
 
 const { width } = Dimensions.get('window');
 const FORMAT_CARD_WIDTH = (width - Spacing.md * 2 - Spacing.sm) / 2;
@@ -101,10 +102,11 @@ export default function QuestCompleteScreen({ navigation, route }: any) {
   // ── Handle generate ───────────────────────────────────────────────────────
   const handleGenerate = () => {
     if (!selectedFormat || !generatedStory) return;
+    saveGeneratedStory(generatedStory, selectedFormat);
     if (selectedFormat === 'storybook') {
-      navigation.push('StoryDetail', { story: generatedStory, fromCreate: true });
+      navigation.push('StoryDetail', { story: generatedStory, fromCreate: true, choices: safeChoices });
     } else {
-      navigation.push('WatchDetail', { story: generatedStory, fromCreate: true });
+      navigation.push('WatchDetail', { story: generatedStory, fromCreate: true, choices: safeChoices });
     }
   };
 

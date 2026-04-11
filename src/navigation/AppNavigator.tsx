@@ -55,6 +55,24 @@ export const getQuestSetup = () => {
   return { characterId: '', themeId: '' };
 };
 
+// ─── Generated story persistence ───────────────────────────────────────────
+export const saveGeneratedStory = (story: any, format: 'storybook' | 'video') => {
+  if (Platform.OS === 'web') {
+    try {
+      const existing = JSON.parse(localStorage.getItem('messmer_generated_stories') || '[]');
+      const entry = { ...story, id: `gen-${Date.now()}`, format, createdAt: Date.now() };
+      const updated = [entry, ...existing].slice(0, 20);
+      localStorage.setItem('messmer_generated_stories', JSON.stringify(updated));
+    } catch {}
+  }
+};
+export const getGeneratedStories = (): any[] => {
+  if (Platform.OS === 'web') {
+    try { return JSON.parse(localStorage.getItem('messmer_generated_stories') || '[]'); } catch {}
+  }
+  return [];
+};
+
 // ─── Navigator ─────────────────────────────────────────────────────────────
 export default function AppNavigator() {
   const [splashDone, setSplashDone] = useState(false);

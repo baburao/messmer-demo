@@ -166,6 +166,7 @@ function VideoPlayer({ image, totalDuration }: { image: string; totalDuration: s
 export default function WatchDetailScreen({ navigation, route }: any) {
   const story      = route?.params?.story;
   const fromCreate = route?.params?.fromCreate === true;
+  const choices    = route?.params?.choices ?? [];
   const [liked, setLiked]         = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [scrollY, setScrollY]     = useState(0);
@@ -274,54 +275,54 @@ export default function WatchDetailScreen({ navigation, route }: any) {
           <Text style={styles.desc}>{desc}</Text>
         </View>
 
-        {/* ── Episodes ──────────────────────────────────────── */}
+        {/* ── Episodes / Choices ────────────────────────────── */}
         <View style={styles.episodesSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionLabel}>PARTS</Text>
-            <Text style={styles.sectionMeta}>{episodes.length} parts · {totalDuration} total</Text>
-          </View>
-
-          {episodes.map((ep, idx) => (
-            <View key={ep.id} style={styles.epCard}>
-              {/* Banner */}
-              <View style={styles.epBanner}>
-                <Image source={{ uri: ep.image }} style={styles.epBannerImage} resizeMode="cover" />
-                <View style={styles.epBannerOverlay} />
-
-                {/* Play icon centred */}
-                <View style={styles.epPlayBtn}>
-                  <Text style={styles.epPlayIcon}>▶</Text>
-                </View>
-
-                {/* Episode label + start time bottom-left */}
-                <View style={styles.epBottomLeft}>
-                  <Text style={styles.epNumber}>PART {ep.number}</Text>
-                  <Text style={styles.epStartTime}>{startTimes[idx]}</Text>
-                </View>
-
-                {/* Duration badge bottom-right */}
-                <View style={styles.epDurationBadge}>
-                  <Text style={styles.epDuration}>{ep.duration}</Text>
-                </View>
-
-                {/* Edit icon */}
-                <TouchableOpacity
-                  style={styles.epEditBtn}
-                  onPress={() => navigation.navigate('StoryExperience', {
-                    themeId: story?.id || 'dark', questId: ep.id, editMode: true,
-                  })}
-                >
-                  <Text style={styles.epEditIcon}>✎</Text>
-                </TouchableOpacity>
+          {fromCreate && choices.length > 0 ? (
+            <>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionLabel}>YOUR JOURNEY</Text>
+                <Text style={styles.sectionMeta}>{choices.length} {choices.length === 1 ? 'choice' : 'choices'} made</Text>
               </View>
-
-              {/* Text */}
-              <View style={styles.epBody}>
-                <Text style={styles.epTitle}>{ep.title}</Text>
-                <Text style={styles.epDesc} numberOfLines={2}>{ep.desc}</Text>
+              {choices.map((choice: any, idx: number) => (
+                <View key={idx} style={styles.epCard}>
+                  <View style={styles.epBody}>
+                    <View style={styles.roundBadge}>
+                      <Text style={styles.roundBadgeText}>ROUND {choice.round}</Text>
+                    </View>
+                    <Text style={[styles.epTitle, { marginTop: 8 }]}>{choice.optionText}</Text>
+                  </View>
+                </View>
+              ))}
+            </>
+          ) : (
+            <>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionLabel}>PARTS</Text>
+                <Text style={styles.sectionMeta}>{episodes.length} parts · {totalDuration} total</Text>
               </View>
-            </View>
-          ))}
+              {episodes.map((ep, idx) => (
+                <View key={ep.id} style={styles.epCard}>
+                  <View style={styles.epBanner}>
+                    <Image source={{ uri: ep.image }} style={styles.epBannerImage} resizeMode="cover" />
+                    <View style={styles.epBannerOverlay} />
+                    <View style={styles.epPlayBtn}><Text style={styles.epPlayIcon}>▶</Text></View>
+                    <View style={styles.epBottomLeft}>
+                      <Text style={styles.epNumber}>PART {ep.number}</Text>
+                      <Text style={styles.epStartTime}>{startTimes[idx]}</Text>
+                    </View>
+                    <View style={styles.epDurationBadge}><Text style={styles.epDuration}>{ep.duration}</Text></View>
+                    <TouchableOpacity style={styles.epEditBtn} onPress={() => navigation.navigate('StoryExperience', { themeId: story?.id || 'dark', questId: ep.id, editMode: true })}>
+                      <Text style={styles.epEditIcon}>✎</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.epBody}>
+                    <Text style={styles.epTitle}>{ep.title}</Text>
+                    <Text style={styles.epDesc} numberOfLines={2}>{ep.desc}</Text>
+                  </View>
+                </View>
+              ))}
+            </>
+          )}
 
           <View style={{ height: fromCreate ? 120 : 48 }} />
         </View>
@@ -573,6 +574,15 @@ const ss = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.border,
   },
   doneBtnText: { color: Colors.gold, fontSize: 15, fontWeight: '600' },
+
+  roundBadge: {
+    alignSelf: 'flex-start' as any,
+    paddingHorizontal: 8, paddingVertical: 3,
+    borderRadius: 4,
+    backgroundColor: 'rgba(201,168,76,0.15)',
+    borderWidth: 1, borderColor: 'rgba(201,168,76,0.4)',
+  },
+  roundBadgeText: { color: Colors.gold, fontSize: 9, letterSpacing: 2, fontWeight: '700' },
 
   // ── Floating create-flow bar ──────────────────────────────────────────
   floatingBar: {
