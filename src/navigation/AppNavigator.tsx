@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -17,6 +17,7 @@ import StoryExperienceScreen from '../screens/StoryExperienceScreen';
 import GameplayCompleteScreen from '../screens/GameplayCompleteScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import ThemeSelectScreen from '../screens/ThemeSelectScreen';
+import WatchDetailScreen from '../screens/WatchDetailScreen';
 
 const Stack = createStackNavigator();
 
@@ -55,7 +56,11 @@ export const getQuestSetup = () => {
 // ─── Navigator ─────────────────────────────────────────────────────────────
 export default function AppNavigator() {
   const [splashDone, setSplashDone] = useState(false);
-  const startRoute = 'Login';
+  const [startRoute, setStartRoute] = useState<string>('Login');
+
+  useEffect(() => {
+    setStartRoute(isAuthed() ? 'Home' : 'Login');
+  }, []);
 
   if (!splashDone) {
     return <SplashScreen onFinish={() => setSplashDone(true)} />;
@@ -84,6 +89,7 @@ export default function AppNavigator() {
         <Stack.Screen name="GameplayComplete" component={GameplayCompleteScreen} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen name="ThemeSelect" component={ThemeSelectScreen} />
+        <Stack.Screen name="WatchDetail" component={WatchDetailScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

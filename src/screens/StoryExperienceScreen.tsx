@@ -29,10 +29,8 @@ type GameStep = NarrativeStep | DecisionStep;
 
 // ─── Scene images by theme ─────────────────────────────────────────────────
 const THEME_IMAGES: Record<string, string> = {
-  neon:    'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=800&q=80',
-  woods:   'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=800&q=80',
-  ancient: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=800&q=80',
-  dark:    'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&q=80',
+  neon: 'https://images.unsplash.com/photo-1519638399535-1b036603ac77?w=800&q=80',
+  woods: 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&q=80',
 };
 
 // ─── Story steps ───────────────────────────────────────────────────────────

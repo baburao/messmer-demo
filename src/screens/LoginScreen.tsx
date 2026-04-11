@@ -6,68 +6,52 @@ import {
 import { Colors, Typography, Radius } from '../theme';
 import { saveAuth } from '../navigation/AppNavigator';
 
-const { height } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 interface Props { navigation: any; }
 
 const SOCIAL = [
-  { id: 'google',   label: 'G',  labelColor: '#EA4335', border: 'rgba(234,67,53,0.3)' },
-  { id: 'discord',  label: 'D',  labelColor: '#5865F2', border: 'rgba(88,101,242,0.3)' },
-  { id: 'meta',     label: '∞',  labelColor: '#0082FB', border: 'rgba(0,130,251,0.3)' },
-  { id: 'x',        label: '✕',  labelColor: Colors.text, border: 'rgba(255,255,255,0.15)' },
+  { label: 'G', color: '#EA4335', bg: '#1A1A1A' },
+  { label: 'D', color: '#5865F2', bg: '#1A1A1A' },
+  { label: '∞', color: '#0082FB', bg: '#1A1A1A' },
+  { label: '✕', color: Colors.text, bg: '#1A1A1A' },
 ];
 
 export default function LoginScreen({ navigation }: Props) {
-  const [email, setEmail]       = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [emailFocused, setEmailFocused]       = useState(false);
-  const [passwordFocused, setPasswordFocused] = useState(false);
-
-  const handleLogin = () => {
-    saveAuth();
-    navigation.navigate('Home');
-  };
 
   return (
     <View style={styles.container}>
-      {/* Background image */}
+      {/* Atmospheric background */}
       <Image
-        source={{ uri: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=900&q=85' }}
+        source={{ uri: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80' }}
         style={styles.bgImage}
         resizeMode="cover"
       />
-      {/* Dark overlay */}
-      <View style={styles.bgOverlay} />
-      {/* Warm gold glow at bottom */}
-      <View style={styles.bgGlow} />
+      {/* Gradient overlays */}
+      <View style={styles.bgDark} />
+      <View style={styles.bgGold} />
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.flex}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scroll}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* ── Branding ──────────────────────────────── */}
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex}>
+        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+          {/* Branding */}
           <View style={styles.branding}>
             <Text style={styles.experience}>E X P E R I E N C E</Text>
             <Text style={styles.logo}>MESSMER</Text>
             <View style={styles.taglineRow}>
-              <View style={styles.taglineLine} />
+              <View style={styles.divider} />
               <Text style={styles.tagline}>YOUR STORY, YOUR CHOICES</Text>
-              <View style={styles.taglineLine} />
+              <View style={styles.divider} />
             </View>
           </View>
 
-          {/* ── Form ──────────────────────────────────── */}
+          {/* Form */}
           <View style={styles.form}>
-
             {/* Email */}
-            <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>EMAIL ADDRESS</Text>
-              <View style={[styles.inputBox, emailFocused && styles.inputBoxFocused]}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>EMAIL ADDRESS</Text>
+              <View style={styles.inputWrapper}>
                 <TextInput
                   style={styles.input}
                   placeholder="name@domain.com"
@@ -76,21 +60,19 @@ export default function LoginScreen({ navigation }: Props) {
                   onChangeText={setEmail}
                   keyboardType="email-address"
                   autoCapitalize="none"
-                  onFocus={() => setEmailFocused(true)}
-                  onBlur={() => setEmailFocused(false)}
                 />
               </View>
             </View>
 
             {/* Password */}
-            <View style={styles.fieldGroup}>
-              <View style={styles.fieldLabelRow}>
-                <Text style={styles.fieldLabel}>PASSWORD</Text>
+            <View style={styles.inputGroup}>
+              <View style={styles.labelRow}>
+                <Text style={styles.label}>PASSWORD</Text>
                 <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-                  <Text style={styles.forgotText}>Forgot Password?</Text>
+                  <Text style={styles.forgotLink}>Forgot Password?</Text>
                 </TouchableOpacity>
               </View>
-              <View style={[styles.inputBox, passwordFocused && styles.inputBoxFocused]}>
+              <View style={styles.inputWrapper}>
                 <TextInput
                   style={styles.input}
                   placeholder="••••••••"
@@ -98,8 +80,6 @@ export default function LoginScreen({ navigation }: Props) {
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry
-                  onFocus={() => setPasswordFocused(true)}
-                  onBlur={() => setPasswordFocused(false)}
                 />
               </View>
             </View>
@@ -107,14 +87,14 @@ export default function LoginScreen({ navigation }: Props) {
             {/* Login button */}
             <TouchableOpacity
               style={styles.loginBtn}
-              onPress={handleLogin}
-              activeOpacity={0.88}
+              onPress={() => { saveAuth(); navigation.navigate('Home'); }}
+              activeOpacity={0.85}
             >
               <Text style={styles.loginBtnText}>LOGIN</Text>
             </TouchableOpacity>
           </View>
 
-          {/* ── Social ────────────────────────────────── */}
+          {/* Social sign in */}
           <View style={styles.socialSection}>
             <View style={styles.orRow}>
               <View style={styles.orLine} />
@@ -123,13 +103,9 @@ export default function LoginScreen({ navigation }: Props) {
             </View>
 
             <View style={styles.socialRow}>
-              {SOCIAL.map((s) => (
-                <TouchableOpacity
-                  key={s.id}
-                  style={[styles.socialBtn, { borderColor: s.border }]}
-                  activeOpacity={0.75}
-                >
-                  <Text style={[styles.socialLabel, { color: s.labelColor }]}>{s.label}</Text>
+              {SOCIAL.map((s, i) => (
+                <TouchableOpacity key={i} style={styles.socialBtn} activeOpacity={0.7}>
+                  <Text style={[styles.socialIcon, { color: s.color }]}>{s.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -141,7 +117,6 @@ export default function LoginScreen({ navigation }: Props) {
               </TouchableOpacity>
             </View>
           </View>
-
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -150,99 +125,72 @@ export default function LoginScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  container: { flex: 1, backgroundColor: '#06050F' },
-
+  container: { flex: 1, backgroundColor: '#080610' },
   bgImage: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
     width: '100%', height: '100%',
   },
-  bgOverlay: {
+  bgDark: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(4,3,12,0.75)',
+    backgroundColor: 'rgba(4,3,12,0.72)',
   },
-  bgGlow: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    height: height * 0.38,
-    backgroundColor: 'rgba(180,140,50,0.07)',
-  },
-
-  scroll: {
-    flexGrow: 1,
-    paddingHorizontal: 28,
-    paddingTop: 80,
-    paddingBottom: 48,
+  bgGold: {
+    position: 'absolute', bottom: 0, left: 0, right: 0, height: height * 0.35,
+    backgroundColor: 'rgba(201,168,76,0.06)',
   },
 
-  // Branding
-  branding: { alignItems: 'center', marginBottom: 48 },
+  scroll: { flexGrow: 1, paddingHorizontal: 28, paddingTop: 72, paddingBottom: 40 },
+
+  branding: { alignItems: 'center', marginBottom: 52 },
   experience: {
-    color: Colors.textSecondary,
-    fontSize: 11, letterSpacing: 5, marginBottom: 4,
+    color: Colors.textSecondary, fontSize: Typography.sizes.xs,
+    letterSpacing: 6, marginBottom: 2,
   },
   logo: {
-    color: Colors.gold,
-    fontSize: 52, fontFamily: Typography.fontSerif,
-    letterSpacing: 10, marginBottom: 16,
+    color: Colors.gold, fontSize: Typography.sizes.xxxl + 6,
+    fontFamily: Typography.fontSerif, letterSpacing: 10, marginBottom: 14,
   },
   taglineRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  taglineLine: { flex: 1, height: 1, backgroundColor: 'rgba(201,168,76,0.4)' },
+  divider: { width: 30, height: 1, backgroundColor: Colors.gold, opacity: 0.5 },
   tagline: { color: Colors.textSecondary, fontSize: 10, letterSpacing: 2.5 },
 
-  // Form
-  form: { gap: 20, marginBottom: 36 },
-  fieldGroup: { gap: 8 },
-  fieldLabelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  fieldLabel: { color: Colors.textSecondary, fontSize: 10, letterSpacing: 2.5, fontWeight: '600' },
-  forgotText: { color: Colors.textSecondary, fontSize: 13 },
-
-  inputBox: {
-    height: 54,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.14)',
-    borderRadius: Radius.sm,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    justifyContent: 'center',
-  },
-  inputBoxFocused: {
-    borderColor: Colors.gold,
-    backgroundColor: 'rgba(201,168,76,0.05)',
+  form: { gap: 18, marginBottom: 32 },
+  inputGroup: { gap: 8 },
+  labelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  label: { color: Colors.textSecondary, fontSize: 10, letterSpacing: 2.5 },
+  forgotLink: { color: Colors.textSecondary, fontSize: Typography.sizes.sm },
+  inputWrapper: {
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
+    borderRadius: Radius.sm, height: 52,
+    justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.04)',
   },
   input: {
-    color: Colors.text, fontSize: 15,
-    paddingHorizontal: 16,
-    outlineWidth: 0,
+    color: Colors.text, fontSize: Typography.sizes.md,
+    paddingHorizontal: 16, outlineWidth: 0,
   } as any,
 
   loginBtn: {
-    backgroundColor: Colors.gold,
-    borderRadius: Radius.sm,
-    height: 56,
-    alignItems: 'center', justifyContent: 'center',
-    marginTop: 4,
+    backgroundColor: Colors.gold, borderRadius: Radius.sm,
+    height: 56, alignItems: 'center', justifyContent: 'center', marginTop: 4,
   },
   loginBtnText: {
-    color: Colors.background,
-    fontSize: 14, letterSpacing: 5, fontWeight: '700',
+    color: Colors.background, fontSize: Typography.sizes.sm,
+    letterSpacing: 4, fontWeight: '700',
   },
 
-  // Social
-  socialSection: { gap: 24 },
-  orRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  orLine: { flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.1)' },
+  socialSection: { gap: 20 },
+  orRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  orLine: { flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.12)' },
   orText: { color: Colors.textMuted, fontSize: 10, letterSpacing: 2 },
-
-  socialRow: { flexDirection: 'row', justifyContent: 'center', gap: 14 },
+  socialRow: { flexDirection: 'row', justifyContent: 'center', gap: 12 },
   socialBtn: {
-    width: 68, height: 58,
-    borderWidth: 1,
-    borderRadius: Radius.sm,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    width: 70, height: 60, borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)', borderRadius: Radius.sm,
+    backgroundColor: 'rgba(255,255,255,0.05)',
     alignItems: 'center', justifyContent: 'center',
   },
-  socialLabel: { fontSize: 20, fontWeight: '700' },
-
-  signupRow: {
-    flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 4,
-  },
-  signupText: { color: Colors.textSecondary, fontSize: 14 },
-  signupLink: { color: Colors.gold, fontSize: 14, fontWeight: '600' },
+  socialIcon: { fontSize: 20, fontWeight: '700' },
+  signupRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
+  signupText: { color: Colors.textSecondary, fontSize: Typography.sizes.sm },
+  signupLink: { color: Colors.gold, fontSize: Typography.sizes.sm, fontWeight: '600' },
 });

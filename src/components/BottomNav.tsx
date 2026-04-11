@@ -1,0 +1,60 @@
+import React from 'react';
+import { View, TouchableOpacity, Text, StyleSheet, Platform } from 'react-native';
+import { Colors } from '../theme';
+
+interface Props {
+  active: 'explore' | 'create' | 'profile';
+  onNavigate: (screen: string) => void;
+}
+
+const TABS = [
+  { key: 'explore', label: 'EXPLORE', screen: 'Home',      icon: '⊞' },
+  { key: 'create',  label: 'CREATE',  screen: 'StoryList', icon: '✎' },
+  { key: 'profile', label: 'PROFILE', screen: 'Profile',   icon: '⚙' },
+];
+
+export default function BottomNav({ active, onNavigate }: Props) {
+  return (
+    <View style={styles.wrapper}>
+      <View style={styles.container}>
+        {TABS.map((tab) => {
+          const isActive = active === tab.key;
+          return (
+            <TouchableOpacity
+              key={tab.key}
+              style={styles.tab}
+              onPress={() => onNavigate(tab.screen)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.icon, isActive && styles.activeIcon]}>{tab.icon}</Text>
+              <Text style={[styles.label, isActive && styles.activeLabel]}>{tab.label}</Text>
+              {isActive && <View style={styles.activePip} />}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  wrapper: {
+    backgroundColor: Colors.backgroundCard,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+  },
+  container: {
+    flexDirection: 'row',
+    paddingTop: 10,
+    paddingBottom: Platform.OS === 'ios' ? 28 : 14,
+  },
+  tab: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 2 },
+  icon: { fontSize: 20, color: Colors.textMuted },
+  activeIcon: { color: Colors.gold },
+  label: { fontSize: 9, color: Colors.textMuted, letterSpacing: 1.5 },
+  activeLabel: { color: Colors.gold },
+  activePip: {
+    position: 'absolute', bottom: -2,
+    width: 4, height: 4, borderRadius: 2, backgroundColor: Colors.gold,
+  },
+});

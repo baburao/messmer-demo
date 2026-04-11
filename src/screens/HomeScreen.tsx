@@ -33,8 +33,6 @@ const READ_STORIES = [
   },
 ];
 
-
-
 const WATCH_STORIES = [
   {
     id: 'w1',
@@ -254,9 +252,7 @@ export default function HomeScreen({ navigation }: any) {
 
                   <View style={styles.heroContent}>
                     <Text style={styles.heroCategory}>{story.category}</Text>
-                    {/* 1 line max with ellipsis */}
                     <Text style={styles.heroTitle} numberOfLines={1}>{story.title}</Text>
-                    {/* 2 lines max */}
                     <Text style={styles.heroDesc} numberOfLines={2}>{story.desc}</Text>
                     <TouchableOpacity
                       style={styles.continueBtn}
@@ -276,6 +272,7 @@ export default function HomeScreen({ navigation }: any) {
                   key={item.id}
                   style={styles.heroCard}
                   activeOpacity={0.9}
+                  onPress={() => navigation.navigate('WatchDetail', { story: item })}
                 >
                   <Image source={{ uri: item.image }} style={styles.heroImage} resizeMode="cover" />
                   <View style={styles.heroGradient} />
@@ -310,7 +307,10 @@ export default function HomeScreen({ navigation }: any) {
                     <Text style={styles.heroCategory}>{item.category}</Text>
                     <Text style={styles.heroTitle} numberOfLines={1}>{item.title}</Text>
                     <Text style={styles.heroDesc} numberOfLines={2}>{item.desc}</Text>
-                    <TouchableOpacity style={styles.continueBtn}>
+                    <TouchableOpacity
+                      style={styles.continueBtn}
+                      onPress={(e) => { e.stopPropagation?.(); navigation.navigate('WatchDetail', { story: item }); }}
+                    >
                       <Text style={styles.continueBtnText}>WATCH NOW →</Text>
                     </TouchableOpacity>
                   </View>
