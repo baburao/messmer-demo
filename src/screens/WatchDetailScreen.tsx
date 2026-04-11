@@ -9,6 +9,20 @@ import { Share02Icon } from '@hugeicons/core-free-icons';
 
 const STICKY_THRESHOLD = 280;
 
+// ─── Duration helpers ─────────────────────────────────────────────────────
+function parseSecs(d: string): number {
+  const [m, s] = d.split(':').map(Number);
+  return m * 60 + s;
+}
+function formatSecs(total: number): string {
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  const mm = String(m).padStart(2, '0');
+  const ss = String(s).padStart(2, '0');
+  return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+}
+
 // ─── Episode data ─────────────────────────────────────────────────────────
 type Episode = {
   id: string; number: string; title: string; desc: string; duration: string; image: string;
@@ -95,7 +109,7 @@ function ShareSheet({ onClose }: { onClose: () => void }) {
 }
 
 // ─── Video Player ─────────────────────────────────────────────────────────
-function VideoPlayer({ image, title }: { image: string; title: string }) {
+function VideoPlayer({ image, totalDuration }: { image: string; totalDuration: string }) {
   const [playing, setPlaying] = useState(false);
   const progress = useRef(new Animated.Value(0)).current;
   const animRef = useRef<any>(null);
@@ -120,7 +134,6 @@ function VideoPlayer({ image, title }: { image: string; title: string }) {
       <Image source={{ uri: image }} style={vp.poster} resizeMode="cover" />
       <View style={vp.overlay} />
 
-      {/* Back handled by parent — just controls here */}
       {!playing ? (
         <TouchableOpacity style={vp.playBtn} onPress={handlePlay} activeOpacity={0.8}>
           <View style={vp.playCircle}>
@@ -141,8 +154,8 @@ function VideoPlayer({ image, title }: { image: string; title: string }) {
           <Animated.View style={[vp.progressFill, { width: progressWidth }]} />
         </View>
         <View style={vp.timeRow}>
-          <Text style={vp.timeText}>{playing ? 'Playing...' : '00:00'}</Text>
-          <Text style={vp.timeText}>24:35</Text>
+          <Text style={vp.timeText}>00:00</Text>
+          <Text style={vp.timeText}>{totalDuration}</Text>
         </View>
       </View>
     </View>
@@ -164,6 +177,16 @@ export default function WatchDetailScreen({ navigation, route }: any) {
 
   const episodes: Episode[] = WATCH_EPISODES[story?.id] || WATCH_EPISODES.w1;
   const showStickyHeader = scrollY > STICKY_THRESHOLD;
+
+  // Compute total duration and per-episode start times
+  const totalSecs = episodes.reduce((sum, ep) => sum + parseSecs(ep.duration), 0);
+  const totalDuration = formatSecs(totalSecs);
+  const startTimes: string[] = [];
+  let acc = 0;
+  for (const ep of episodes) {
+    startTimes.push(formatSecs(acc));
+    acc += parseSecs(ep.duration);
+  }
 
   return (
     <View style={styles.container}>
@@ -205,7 +228,7 @@ export default function WatchDetailScreen({ navigation, route }: any) {
       >
         {/* ── Back button (over video) ── */}
         <View style={styles.videoWrapper}>
-          <VideoPlayer image={image} title={title} />
+          <VideoPlayer image={image} totalDuration={totalDuration} />
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <Text style={styles.backIcon}>←</Text>
           </TouchableOpacity>
@@ -248,9 +271,12 @@ export default function WatchDetailScreen({ navigation, route }: any) {
 
         {/* ── Episodes ──────────────────────────────────────── */}
         <View style={styles.episodesSection}>
-          <Text style={styles.sectionLabel}>EPISODES</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionLabel}>PARTS</Text>
+            <Text style={styles.sectionMeta}>{episodes.length} parts · {totalDuration} total</Text>
+          </View>
 
-          {episodes.map((ep) => (
+          {episodes.map((ep, idx) => (
             <View key={ep.id} style={styles.epCard}>
               {/* Banner */}
               <View style={styles.epBanner}>
@@ -262,10 +288,13 @@ export default function WatchDetailScreen({ navigation, route }: any) {
                   <Text style={styles.epPlayIcon}>▶</Text>
                 </View>
 
-                {/* Episode label bottom-left */}
-                <Text style={styles.epNumber}>EP {ep.number}</Text>
+                {/* Episode label + start time bottom-left */}
+                <View style={styles.epBottomLeft}>
+                  <Text style={styles.epNumber}>PART {ep.number}</Text>
+                  <Text style={styles.epStartTime}>{startTimes[idx]}</Text>
+                </View>
 
-                {/* Duration top-right */}
+                {/* Duration badge bottom-right */}
                 <View style={styles.epDurationBadge}>
                   <Text style={styles.epDuration}>{ep.duration}</Text>
                 </View>
@@ -370,7 +399,9 @@ const styles = StyleSheet.create({
 
   // Episodes
   episodesSection: { paddingHorizontal: 20, paddingTop: 28 },
-  sectionLabel: { color: Colors.textMuted, fontSize: 10, letterSpacing: 3, marginBottom: 16 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 16 },
+  sectionLabel: { color: Colors.textMuted, fontSize: 10, letterSpacing: 3 },
+  sectionMeta: { color: Colors.textMuted, fontSize: 11 },
 
   // Episode card
   epCard: {
@@ -399,9 +430,15 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   epPlayIcon: { color: Colors.text, fontSize: 16, marginLeft: 3 },
-  epNumber: {
+  epBottomLeft: {
     position: 'absolute' as any, bottom: 10, left: 12,
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+  },
+  epNumber: {
     color: Colors.gold, fontSize: 10, letterSpacing: 2, fontWeight: '700',
+  },
+  epStartTime: {
+    color: 'rgba(255,255,255,0.55)', fontSize: 10,
   },
   epDurationBadge: {
     position: 'absolute' as any, bottom: 10, right: 12,
