@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { Colors, Typography, Radius, Spacing } from '../theme';
 import { saveGeneratedStory } from '../navigation/AppNavigator';
+import BottomNav from '../components/BottomNav';
 
 // ─── Mock story generator ──────────────────────────────────────────────────
 const MOCK_STORIES: Record<string, { title: string; body: string; image: string }> = {
@@ -255,6 +256,14 @@ export default function StoryResultScreen({ navigation, route }: any) {
     setSaved(false);
   };
 
+  const handleCreateNew = () => {
+    navigation.navigate('StoryCreate');
+  };
+
+  const handleGoHome = () => {
+    navigation.navigate('Home');
+  };
+
   return (
     <View style={rs.root}>
       <StatusBar barStyle="light-content" />
@@ -267,7 +276,10 @@ export default function StoryResultScreen({ navigation, route }: any) {
         <Text style={rs.headerTitle}>
           {phase === 'generating' ? 'GENERATING...' : 'YOUR STORY'}
         </Text>
-        <View style={rs.backBtn} />
+        {/* Home shortcut top-right */}
+        <TouchableOpacity style={rs.backBtn} onPress={handleGoHome} activeOpacity={0.7}>
+          <Text style={rs.homeIcon}>⌂</Text>
+        </TouchableOpacity>
       </View>
 
       {phase === 'generating' ? (
@@ -306,6 +318,7 @@ export default function StoryResultScreen({ navigation, route }: any) {
 
           {/* Actions */}
           <View style={rs.actions}>
+            {/* Primary: Save */}
             <TouchableOpacity
               style={[rs.actionBtn, saved && rs.actionBtnSaved]}
               onPress={handleSave}
@@ -316,14 +329,28 @@ export default function StoryResultScreen({ navigation, route }: any) {
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={rs.secondaryBtn} onPress={handleRegenerate} activeOpacity={0.8}>
-              <Text style={rs.secondaryBtnText}>↺  REGENERATE</Text>
+            {/* Secondary row: Regenerate + Create New */}
+            <View style={rs.secondaryRow}>
+              <TouchableOpacity style={rs.secondaryBtn} onPress={handleRegenerate} activeOpacity={0.8}>
+                <Text style={rs.secondaryBtnText}>↺  REGENERATE</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[rs.secondaryBtn, rs.createNewBtn]} onPress={handleCreateNew} activeOpacity={0.8}>
+                <Text style={rs.createNewText}>✦  CREATE NEW</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Go to Home feed */}
+            <TouchableOpacity style={rs.homeFeedBtn} onPress={handleGoHome} activeOpacity={0.8}>
+              <Text style={rs.homeFeedText}>VIEW HOME FEED →</Text>
             </TouchableOpacity>
           </View>
 
-          <View style={{ height: 32 }} />
+          <View style={{ height: 16 }} />
         </ScrollView>
       )}
+
+      {/* Bottom nav — always visible so user can jump anywhere */}
+      <BottomNav active="create" onNavigate={(s) => navigation.navigate(s)} />
     </View>
   );
 }
@@ -345,6 +372,7 @@ const rs = StyleSheet.create({
   },
   backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   backArrow: { fontSize: 22, color: Colors.gold },
+  homeIcon: { fontSize: 22, color: Colors.textMuted },
   headerTitle: { fontSize: Typography.sizes.sm, color: Colors.text, letterSpacing: 3, fontWeight: '700' },
 
   scroll: { paddingBottom: 24 },
@@ -392,9 +420,19 @@ const rs = StyleSheet.create({
   },
   actionBtnText: { fontSize: Typography.sizes.sm, color: Colors.background, fontWeight: '700', letterSpacing: 2 },
   actionBtnTextSaved: { color: Colors.gold },
+
+  secondaryRow: { flexDirection: 'row', gap: 10 },
   secondaryBtn: {
-    borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center',
+    flex: 1, borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center',
     borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surface,
   },
-  secondaryBtnText: { fontSize: Typography.sizes.sm, color: Colors.textSecondary, fontWeight: '600', letterSpacing: 1.5 },
+  secondaryBtnText: { fontSize: Typography.sizes.xs, color: Colors.textSecondary, fontWeight: '600', letterSpacing: 1.5 },
+  createNewBtn: { borderColor: Colors.borderGold, backgroundColor: 'rgba(201,168,76,0.07)' },
+  createNewText: { fontSize: Typography.sizes.xs, color: Colors.gold, fontWeight: '700', letterSpacing: 1.5 },
+
+  homeFeedBtn: {
+    borderRadius: Radius.md, paddingVertical: 13, alignItems: 'center',
+    borderWidth: 1, borderColor: Colors.border,
+  },
+  homeFeedText: { fontSize: Typography.sizes.xs, color: Colors.textMuted, letterSpacing: 2 },
 });
