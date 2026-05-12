@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
   StyleSheet, Image, StatusBar, Modal, Animated, Platform,
@@ -12,21 +12,21 @@ import { Share02Icon } from '@hugeicons/core-free-icons';
 
 const READ_STORIES = [
   {
-    id: '1',
+    id: '1', type: 'read',
     category: 'CULTURE / WEAVING',
     title: 'Shadows in the Loom: The New Noir',
     desc: 'Exploring the intersection of ancestral craftsmanship and the brutalist city...',
     image: 'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=800&q=80',
   },
   {
-    id: '2',
+    id: '2', type: 'read',
     category: 'FICTION / DARK',
     title: 'The Architecture of Silent Echoes',
     desc: 'A labyrinthine journey through memory and forgotten spaces. Every choice reshapes...',
     image: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&q=80',
   },
   {
-    id: '3',
+    id: '3', type: 'read',
     category: 'MYTHOLOGY / EPIC',
     title: 'Edge of the Known',
     desc: 'Ancient maps end here. What lies beyond is yours to discover and define...',
@@ -36,14 +36,14 @@ const READ_STORIES = [
 
 const WATCH_STORIES = [
   {
-    id: 'w1',
+    id: 'w1', type: 'watch',
     category: 'HISTORY / EPIC',
     title: 'Lost Myths of the Aurelian Empire',
     desc: 'Uncovering the forgotten age of stone and fire, where gods walked among mortals...',
     image: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=800&q=80',
   },
   {
-    id: 'w2',
+    id: 'w2', type: 'watch',
     category: 'SCI-FI / VISUAL',
     title: 'Neon Pasts & Electric Futures',
     desc: 'A weekly visual essay where cyberpunk aesthetics collide with ancient prophecy...',
@@ -165,7 +165,6 @@ function ShareSheet({ story, onClose }: { story: any; onClose: () => void }) {
 
 // ─── Main Screen ──────────────────────────────────────────────────────────
 export default function HomeScreen({ navigation }: any) {
-  const [tab, setTab] = useState<'read' | 'watch'>('read');
   const [likedStories, setLikedStories] = useState<Set<string>>(new Set());
   const [shareStory, setShareStory] = useState<any | null>(null);
   const [generatedStories, setGeneratedStories] = useState<any[]>([]);
@@ -177,10 +176,12 @@ export default function HomeScreen({ navigation }: any) {
     }, [])
   );
 
-  const genRead  = generatedStories.filter(s => s.format === 'storybook');
-  const genWatch = generatedStories.filter(s => s.format === 'video');
-  const readList  = [...genRead,  ...READ_STORIES];
-  const watchList = [...genWatch, ...WATCH_STORIES];
+  // Single unified feed: generated first, then interleaved read/watch
+  const genWithType = generatedStories.map(s => ({
+    ...s,
+    type: s.format === 'video' ? 'watch' : 'read',
+  }));
+  const feedList = [...genWithType, ...READ_STORIES, ...WATCH_STORIES];
 
   const toggleLike = (id: string) => {
     setLikedStories(prev => {
@@ -210,134 +211,83 @@ export default function HomeScreen({ navigation }: any) {
         <Text style={styles.headerTitle}>MESSMER</Text>
       </View>
 
-      {/* ── Tab Switcher ──────────────────────────────────── */}
-      <View style={styles.tabBar}>
-        <TouchableOpacity
-          style={[styles.tabBtn, tab === 'read' && styles.tabBtnActive]}
-          onPress={() => setTab('read')}
-        >
-          <Text style={[styles.tabBtnText, tab === 'read' && styles.tabBtnTextActive]}>Read</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tabBtn, tab === 'watch' && styles.tabBtnActive]}
-          onPress={() => setTab('watch')}
-        >
-          <Text style={[styles.tabBtnText, tab === 'watch' && styles.tabBtnTextActive]}>Watch</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* ── Scrollable Content ────────────────────────────── */}
+      {/* ── Unified Feed ──────────────────────────────────── */}
       <View style={styles.scrollWrapper}>
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {tab === 'read' ? (
-            readList.map((story) => {
-              const isLiked = likedStories.has(story.id);
-              return (
-                <TouchableOpacity
-                  key={story.id}
-                  style={styles.heroCard}
-                  onPress={() => navigation.navigate('StoryDetail', { story })}
-                  activeOpacity={0.9}
-                >
-                  <Image source={{ uri: story.image }} style={styles.heroImage} resizeMode="cover" />
-                  <View style={styles.heroGradient} />
+          {feedList.map((item) => {
+            const isWatch = item.type === 'watch';
+            const isLiked = likedStories.has(item.id);
+            const screen  = isWatch ? 'WatchDetail' : 'StoryDetail';
+            return (
+              <TouchableOpacity
+                key={item.id}
+                style={styles.heroCard}
+                onPress={() => navigation.navigate(screen, { story: item })}
+                activeOpacity={0.9}
+              >
+                <Image source={{ uri: item.image }} style={styles.heroImage} resizeMode="cover" />
+                <View style={styles.heroGradient} />
 
-                  {/* Like + Share icons top-right */}
-                  <View style={styles.cardActions}>
-                    <TouchableOpacity
-                      style={[styles.actionBtn, isLiked && styles.actionBtnLiked]}
-                      onPress={(e) => { e.stopPropagation?.(); toggleLike(story.id); }}
-                    >
-                      <Text style={[styles.actionIcon, isLiked && styles.actionIconLiked]}>
-                        {isLiked ? '♥' : '♡'}
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.actionBtn}
-                      onPress={(e) => { e.stopPropagation?.(); setShareStory(story); }}
-                    >
-                      <HugeiconsIcon icon={Share02Icon} size={16} color={Colors.text} />
-                    </TouchableOpacity>
-                  </View>
+                {/* Type tag top-left */}
+                <View style={[styles.typeTag, isWatch && styles.typeTagWatch]}>
+                  <Text style={styles.typeTagText}>{isWatch ? '▶  WATCH' : '◎  READ'}</Text>
+                </View>
 
-                  <View style={styles.heroContent}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <Text style={styles.heroCategory}>{story.category}</Text>
-                      {story.createdAt && <View style={styles.createdBadge}><Text style={styles.createdBadgeText}>✦ YOURS</Text></View>}
-                    </View>
-                    <Text style={styles.heroTitle} numberOfLines={1}>{story.title}</Text>
-                    <Text style={styles.heroDesc} numberOfLines={2}>{story.desc}</Text>
-                    <TouchableOpacity
-                      style={styles.continueBtn}
-                      onPress={(e) => { e.stopPropagation?.(); navigation.navigate('StoryDetail', { story }); }}
-                    >
-                      <Text style={styles.continueBtnText}>READ STORY →</Text>
-                    </TouchableOpacity>
-                  </View>
-                </TouchableOpacity>
-              );
-            })
-          ) : (
-            watchList.map((item) => {
-              const isLiked = likedStories.has(item.id);
-              return (
-                <TouchableOpacity
-                  key={item.id}
-                  style={styles.heroCard}
-                  activeOpacity={0.9}
-                  onPress={() => navigation.navigate('WatchDetail', { story: item })}
-                >
-                  <Image source={{ uri: item.image }} style={styles.heroImage} resizeMode="cover" />
-                  <View style={styles.heroGradient} />
-
-                  {/* Play button centred on image */}
+                {/* Play button for watch items */}
+                {isWatch && (
                   <View style={styles.playCircleWrap}>
                     <View style={styles.playCircle}>
                       <Text style={styles.playIcon}>▶</Text>
                     </View>
                   </View>
+                )}
 
-                  {/* Like + Share top-right */}
-                  <View style={styles.cardActions}>
-                    <TouchableOpacity
-                      style={[styles.actionBtn, isLiked && styles.actionBtnLiked]}
-                      onPress={(e) => { e.stopPropagation?.(); toggleLike(item.id); }}
-                    >
-                      <Text style={[styles.actionIcon, isLiked && styles.actionIconLiked]}>
-                        {isLiked ? '♥' : '♡'}
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.actionBtn}
-                      onPress={(e) => { e.stopPropagation?.(); setShareStory(item); }}
-                    >
-                      <HugeiconsIcon icon={Share02Icon} size={16} color={Colors.text} />
-                    </TouchableOpacity>
-                  </View>
+                {/* Like + Share top-right */}
+                <View style={styles.cardActions}>
+                  <TouchableOpacity
+                    style={[styles.actionBtn, isLiked && styles.actionBtnLiked]}
+                    onPress={(e) => { e.stopPropagation?.(); toggleLike(item.id); }}
+                  >
+                    <Text style={[styles.actionIcon, isLiked && styles.actionIconLiked]}>
+                      {isLiked ? '♥' : '♡'}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.actionBtn}
+                    onPress={(e) => { e.stopPropagation?.(); setShareStory(item); }}
+                  >
+                    <HugeiconsIcon icon={Share02Icon} size={16} color={Colors.text} />
+                  </TouchableOpacity>
+                </View>
 
-                  {/* Content overlay */}
-                  <View style={styles.heroContent}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <Text style={styles.heroCategory}>{item.category}</Text>
-                      {item.createdAt && <View style={styles.createdBadge}><Text style={styles.createdBadgeText}>✦ YOURS</Text></View>}
-                    </View>
-                    <Text style={styles.heroTitle} numberOfLines={1}>{item.title}</Text>
-                    <Text style={styles.heroDesc} numberOfLines={2}>{item.desc}</Text>
-                    <TouchableOpacity
-                      style={styles.continueBtn}
-                      onPress={(e) => { e.stopPropagation?.(); navigation.navigate('WatchDetail', { story: item }); }}
-                    >
-                      <Text style={styles.continueBtnText}>WATCH NOW →</Text>
-                    </TouchableOpacity>
+                {/* Content overlay */}
+                <View style={styles.heroContent}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Text style={styles.heroCategory}>{item.category}</Text>
+                    {item.createdAt && (
+                      <View style={styles.createdBadge}>
+                        <Text style={styles.createdBadgeText}>✦ YOURS</Text>
+                      </View>
+                    )}
                   </View>
-                </TouchableOpacity>
-              );
-            })
-          )}
+                  <Text style={styles.heroTitle} numberOfLines={1}>{item.title}</Text>
+                  <Text style={styles.heroDesc} numberOfLines={2}>{item.desc}</Text>
+                  <TouchableOpacity
+                    style={styles.continueBtn}
+                    onPress={(e) => { e.stopPropagation?.(); navigation.navigate(screen, { story: item }); }}
+                  >
+                    <Text style={styles.continueBtnText}>
+                      {isWatch ? 'WATCH NOW →' : 'READ STORY →'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
       </View>
 
@@ -371,18 +321,29 @@ const styles = StyleSheet.create({
     fontFamily: Typography.fontSerif, letterSpacing: 6,
   },
 
-  tabBar: {
-    flexDirection: 'row', backgroundColor: Colors.surface,
-    marginHorizontal: 20, marginVertical: 12, borderRadius: Radius.xl, padding: 4,
-  },
-  tabBtn: { flex: 1, paddingVertical: 10, borderRadius: Radius.xl, alignItems: 'center' },
-  tabBtnActive: { backgroundColor: Colors.gold },
-  tabBtnText: { color: Colors.textSecondary, fontSize: 14, fontWeight: '500' },
-  tabBtnTextActive: { color: Colors.background, fontWeight: '700' },
-
   scrollWrapper: { flex: 1, flexBasis: 0, overflow: 'hidden' as any },
   scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: 20, paddingBottom: 16, paddingTop: 4 },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 16, paddingTop: 12 },
+
+  typeTag: {
+    position: 'absolute', top: 12, left: 12, zIndex: 10,
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 8, paddingVertical: 4,
+    borderRadius: 4,
+    backgroundColor: 'rgba(201,168,76,0.18)' as any,
+    borderWidth: 1, borderColor: 'rgba(201,168,76,0.5)',
+    ...(Platform.OS === 'web' ? {
+      backdropFilter: 'blur(8px)',
+      WebkitBackdropFilter: 'blur(8px)',
+    } : {}),
+  } as any,
+  typeTagWatch: {
+    backgroundColor: 'rgba(80,120,255,0.18)' as any,
+    borderColor: 'rgba(80,120,255,0.5)',
+  },
+  typeTagText: {
+    color: Colors.text, fontSize: 9, letterSpacing: 1.5, fontWeight: '700',
+  },
 
   heroCard: {
     marginBottom: 16, borderRadius: Radius.md,
