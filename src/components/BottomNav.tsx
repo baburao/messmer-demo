@@ -12,7 +12,7 @@ interface Props {
 const TABS = [
   { key: 'home',    label: 'HOME',    screen: 'Home',        icon: Home01Icon,     isHuge: true  },
   { key: 'search',  label: 'SEARCH',  screen: 'Search',      icon: Search01Icon,   isHuge: true  },
-  { key: 'create',  label: 'CREATE',  screen: 'ThemeSelect', icon: null,           isHuge: false, unicode: '✎' },
+  { key: 'create',  label: 'CREATE',  screen: 'StoryCreate', icon: null,           isHuge: false, unicode: '✎' },
   { key: 'profile', label: 'PROFILE', screen: 'Profile',     icon: UserCircleIcon, isHuge: true  },
 ];
 
