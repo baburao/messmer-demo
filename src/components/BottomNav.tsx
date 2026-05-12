@@ -2,17 +2,18 @@ import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet, Platform } from 'react-native';
 import { Colors } from '../theme';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { UserCircleIcon } from '@hugeicons/core-free-icons';
+import { Home01Icon, Search01Icon, UserCircleIcon } from '@hugeicons/core-free-icons';
 
 interface Props {
-  active: 'explore' | 'create' | 'profile';
+  active: 'home' | 'search' | 'create' | 'profile';
   onNavigate: (screen: string) => void;
 }
 
 const TABS = [
-  { key: 'explore', label: 'EXPLORE', screen: 'Home',      icon: '⊞',  isHuge: false },
-  { key: 'create',  label: 'CREATE',  screen: 'ThemeSelect', icon: '✎',  isHuge: false },
-  { key: 'profile', label: 'PROFILE', screen: 'Profile',   icon: null,  isHuge: true  },
+  { key: 'home',    label: 'HOME',    screen: 'Home',        icon: Home01Icon,     isHuge: true  },
+  { key: 'search',  label: 'SEARCH',  screen: 'Search',      icon: Search01Icon,   isHuge: true  },
+  { key: 'create',  label: 'CREATE',  screen: 'ThemeSelect', icon: null,           isHuge: false, unicode: '✎' },
+  { key: 'profile', label: 'PROFILE', screen: 'Profile',     icon: UserCircleIcon, isHuge: true  },
 ];
 
 export default function BottomNav({ active, onNavigate }: Props) {
@@ -30,12 +31,12 @@ export default function BottomNav({ active, onNavigate }: Props) {
             >
               {tab.isHuge ? (
                 <HugeiconsIcon
-                  icon={UserCircleIcon}
+                  icon={tab.icon as any}
                   size={20}
                   color={isActive ? Colors.gold : Colors.textMuted}
                 />
               ) : (
-                <Text style={[styles.icon, isActive && styles.activeIcon]}>{tab.icon}</Text>
+                <Text style={[styles.icon, isActive && styles.activeIcon]}>{tab.unicode}</Text>
               )}
               <Text style={[styles.label, isActive && styles.activeLabel]}>{tab.label}</Text>
               {isActive && <View style={styles.activePip} />}

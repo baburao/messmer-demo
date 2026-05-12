@@ -1,15 +1,14 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
   StyleSheet, Image, StatusBar, Modal, Animated, Platform,
-  TextInput,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Colors, Typography, Radius } from '../theme';
 import BottomNav from '../components/BottomNav';
 import { getQuestSetup, getGeneratedStories } from '../navigation/AppNavigator';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { Share02Icon, SearchIcon, Cancel01Icon } from '@hugeicons/core-free-icons';
+import { Share02Icon } from '@hugeicons/core-free-icons';
 
 const READ_STORIES = [
   {
@@ -169,9 +168,6 @@ export default function HomeScreen({ navigation }: any) {
   const [likedStories, setLikedStories] = useState<Set<string>>(new Set());
   const [shareStory, setShareStory] = useState<any | null>(null);
   const [generatedStories, setGeneratedStories] = useState<any[]>([]);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [query, setQuery] = useState('');
-  const inputRef = useRef<any>(null);
 
   // Reload generated stories every time this screen is focused
   useFocusEffect(
@@ -185,27 +181,7 @@ export default function HomeScreen({ navigation }: any) {
     ...s,
     type: s.format === 'video' ? 'watch' : 'read',
   }));
-  const allStories = [...genWithType, ...READ_STORIES, ...WATCH_STORIES];
-
-  // Filter by query
-  const q = query.trim().toLowerCase();
-  const feedList = q
-    ? allStories.filter(s =>
-        s.title.toLowerCase().includes(q) ||
-        s.category.toLowerCase().includes(q) ||
-        (s.desc || '').toLowerCase().includes(q)
-      )
-    : allStories;
-
-  const openSearch = () => {
-    setSearchOpen(true);
-    setTimeout(() => inputRef.current?.focus(), 100);
-  };
-
-  const closeSearch = () => {
-    setSearchOpen(false);
-    setQuery('');
-  };
+  const feedList = [...genWithType, ...READ_STORIES, ...WATCH_STORIES];
 
   const toggleLike = (id: string) => {
     setLikedStories(prev => {
@@ -232,41 +208,8 @@ export default function HomeScreen({ navigation }: any) {
 
       {/* ── Sticky Header ─────────────────────────────────── */}
       <View style={styles.header}>
-        {searchOpen ? (
-          /* ── Search bar mode ── */
-          <View style={styles.searchRow}>
-            <HugeiconsIcon icon={SearchIcon} size={16} color={Colors.textMuted} />
-            <TextInput
-              ref={inputRef}
-              style={styles.searchInput}
-              value={query}
-              onChangeText={setQuery}
-              placeholder="Search stories, genres..."
-              placeholderTextColor={Colors.textMuted}
-              autoCapitalize="none"
-              returnKeyType="search"
-            />
-            <TouchableOpacity onPress={closeSearch} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <HugeiconsIcon icon={Cancel01Icon} size={18} color={Colors.textMuted} />
-            </TouchableOpacity>
-          </View>
-        ) : (
-          /* ── Normal mode ── */
-          <>
-            <Text style={styles.headerTitle}>MESSMER</Text>
-            <TouchableOpacity style={styles.searchBtn} onPress={openSearch} activeOpacity={0.7}>
-              <HugeiconsIcon icon={SearchIcon} size={20} color={Colors.text} />
-            </TouchableOpacity>
-          </>
-        )}
+        <Text style={styles.headerTitle}>MESSMER</Text>
       </View>
-
-      {/* ── No results ── */}
-      {searchOpen && q.length > 0 && feedList.length === 0 && (
-        <View style={styles.emptySearch}>
-          <Text style={styles.emptySearchText}>No results for "{query}"</Text>
-        </View>
-      )}
 
       {/* ── Unified Feed ──────────────────────────────────── */}
       <View style={styles.scrollWrapper}>
@@ -349,7 +292,7 @@ export default function HomeScreen({ navigation }: any) {
       </View>
 
       {/* ── Sticky Bottom Nav ─────────────────────────────── */}
-      <BottomNav active="explore" onNavigate={(s) => navigation.navigate(s)} />
+      <BottomNav active="home" onNavigate={(s) => navigation.navigate(s)} />
 
       {/* ── Share Bottom Sheet ────────────────────────────── */}
       {shareStory && (
@@ -379,31 +322,6 @@ const styles = StyleSheet.create({
     flex: 1, textAlign: 'center',
     color: Colors.gold, fontSize: 18,
     fontFamily: Typography.fontSerif, letterSpacing: 6,
-  },
-  searchBtn: {
-    position: 'absolute', right: 16,
-    width: 36, height: 36, borderRadius: 18,
-    alignItems: 'center', justifyContent: 'center',
-  },
-
-  // Search bar (expanded in header)
-  searchRow: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: 'rgba(255,255,255,0.07)' as any,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
-    borderRadius: Radius.md, paddingHorizontal: 12, height: 40,
-  },
-  searchInput: {
-    flex: 1, color: Colors.text, fontSize: 14,
-    outlineStyle: 'none',
-  } as any,
-
-  // Empty search state
-  emptySearch: {
-    paddingVertical: 48, alignItems: 'center',
-  },
-  emptySearchText: {
-    color: Colors.textMuted, fontSize: 14, fontStyle: 'italic',
   },
 
   scrollWrapper: { flex: 1, flexBasis: 0, overflow: 'hidden' as any },

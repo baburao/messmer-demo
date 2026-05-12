@@ -8,6 +8,7 @@ import LoginScreen from '../screens/LoginScreen';
 import SignUpScreen from '../screens/SignUpScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import HomeScreen from '../screens/HomeScreen';
+import SearchScreen from '../screens/SearchScreen';
 import StoryListScreen from '../screens/StoryListScreen';
 import StoryDetailScreen from '../screens/StoryDetailScreen';
 import CharacterSelectScreen from '../screens/CharacterSelectScreen';
@@ -100,6 +101,7 @@ export default function AppNavigator() {
         <Stack.Screen name="SignUp" component={SignUpScreen} />
         <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
         <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="Search" component={SearchScreen} />
         <Stack.Screen name="StoryList" component={StoryListScreen} />
         <Stack.Screen name="StoryDetail" component={StoryDetailScreen} />
         <Stack.Screen name="CharacterSelect" component={CharacterSelectScreen} />
