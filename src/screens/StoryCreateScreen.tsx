@@ -1,299 +1,286 @@
 import React, { useState, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  ImageBackground, TextInput, Animated, Platform, StatusBar, Dimensions,
+  TextInput, Modal, Animated, Platform, StatusBar, KeyboardAvoidingView,
 } from 'react-native';
 import { Colors, Typography, Radius, Spacing } from '../theme';
 import BottomNav from '../components/BottomNav';
 
-const { width } = Dimensions.get('window');
-const CARD_W = (width - Spacing.md * 2 - Spacing.sm) / 2;
-
-// ─── Data ─────────────────────────────────────────────────────────────────
-const GENRES = [
-  { id: 'dark-fantasy', label: 'Dark Fantasy',  emoji: '🌑', image: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&q=80' },
-  { id: 'mythology',    label: 'Mythology',      emoji: '⚡', image: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=800&q=80' },
-  { id: 'sci-fi',       label: 'Sci-Fi',         emoji: '🚀', image: 'https://images.unsplash.com/photo-1519638399535-1b036603ac77?w=800&q=80' },
-  { id: 'noir',         label: 'Noir',           emoji: '🕵️', image: 'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=800&q=80' },
-  { id: 'historical',   label: 'Historical',     emoji: '🏛️', image: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=800&q=80' },
-  { id: 'romance',      label: 'Romance',        emoji: '🌹', image: 'https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?w=800&q=80' },
-  { id: 'horror',       label: 'Horror',         emoji: '💀', image: 'https://images.unsplash.com/photo-1504701954957-2010ec3bcec1?w=800&q=80' },
-  { id: 'thriller',     label: 'Thriller',       emoji: '⚔️', image: 'https://images.unsplash.com/photo-1531685250784-7569952593d2?w=800&q=80' },
+// ─── Suggestion rows (ChatGPT-style) ──────────────────────────────────────
+const SUGGESTIONS = [
+  { id: 'dark-fantasy', icon: '🌑', label: 'Dark Fantasy',       sub: 'Shadows, sorcery and ancient power',      genre: 'Dark Fantasy' },
+  { id: 'mythology',    icon: '⚡', label: 'Mythology',           sub: 'Gods, heroes and forgotten epics',        genre: 'Mythology'    },
+  { id: 'sci-fi',       icon: '🚀', label: 'Sci-Fi',             sub: 'Future worlds and first contact',         genre: 'Sci-Fi'       },
+  { id: 'noir',         icon: '🕵️', label: 'Noir',               sub: 'Rain-soaked streets and dark secrets',    genre: 'Noir'         },
+  { id: 'historical',   icon: '🏛️', label: 'Historical',         sub: 'Lost civilisations and turning points',   genre: 'Historical'   },
+  { id: 'romance',      icon: '🌹', label: 'Romance',             sub: 'Love found in the most unlikely places',  genre: 'Romance'      },
+  { id: 'horror',       icon: '💀', label: 'Horror',             sub: 'What lurks beyond the light',             genre: 'Horror'       },
+  { id: 'thriller',     icon: '⚔️', label: 'Thriller',           sub: 'Tension, stakes and no way out',          genre: 'Thriller'     },
 ];
 
-const LENGTHS  = ['Short', 'Medium', 'Epic'];
-const TONES    = ['Gritty', 'Poetic', 'Cinematic', 'Mysterious', 'Dreamlike', 'Raw'];
-const ARCHETYPES = ['A Lone Wanderer', 'A Fallen Scholar', 'A Masked Oracle', 'An Exiled Queen'];
+const FORMATS = [
+  { id: 'read',  icon: '◎', label: 'READ',  sub: 'Written story' },
+  { id: 'watch', icon: '▶', label: 'WATCH', sub: 'Visual narrative' },
+];
+const LENGTHS = ['Short', 'Medium', 'Epic'];
+const TONES   = ['Gritty', 'Poetic', 'Cinematic', 'Mysterious', 'Dreamlike', 'Raw'];
 
-// ─── Step indicator ────────────────────────────────────────────────────────
-function StepBar({ step, total }: { step: number; total: number }) {
+// ─── Options bottom sheet ─────────────────────────────────────────────────
+function OptionsSheet({
+  visible, onClose,
+  format, setFormat,
+  length, setLength,
+  tone, setTone,
+}: any) {
   return (
-    <View style={sb.row}>
-      {Array.from({ length: total }).map((_, i) => (
-        <View key={i} style={[sb.seg, i < step && sb.segActive]} />
-      ))}
-    </View>
+    <Modal transparent animationType="slide" visible={visible} onRequestClose={onClose}>
+      <TouchableOpacity style={opt.backdrop} activeOpacity={1} onPress={onClose} />
+      <View style={opt.sheet}>
+        <View style={opt.handle} />
+        <Text style={opt.sheetTitle}>STORY OPTIONS</Text>
+
+        {/* Format */}
+        <Text style={opt.sectionLabel}>FORMAT</Text>
+        <View style={opt.row}>
+          {FORMATS.map(f => {
+            const sel = format === f.id;
+            return (
+              <TouchableOpacity
+                key={f.id}
+                style={[opt.formatCard, sel && opt.formatCardSel]}
+                onPress={() => setFormat(f.id)}
+                activeOpacity={0.8}
+              >
+                <Text style={[opt.formatIcon, sel && opt.formatIconSel]}>{f.icon}</Text>
+                <Text style={[opt.formatLabel, sel && opt.formatLabelSel]}>{f.label}</Text>
+                <Text style={opt.formatSub}>{f.sub}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* Length */}
+        <Text style={opt.sectionLabel}>LENGTH</Text>
+        <View style={opt.chipRow}>
+          {LENGTHS.map(l => {
+            const sel = length === l;
+            return (
+              <TouchableOpacity
+                key={l}
+                style={[opt.chip, sel && opt.chipSel]}
+                onPress={() => setLength(l)}
+                activeOpacity={0.8}
+              >
+                <Text style={[opt.chipText, sel && opt.chipTextSel]}>{l}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* Tone */}
+        <Text style={opt.sectionLabel}>TONE</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}
+          contentContainerStyle={opt.chipRow}>
+          {TONES.map(t => {
+            const sel = tone === t;
+            return (
+              <TouchableOpacity
+                key={t}
+                style={[opt.chip, sel && opt.chipSel]}
+                onPress={() => setTone(t)}
+                activeOpacity={0.8}
+              >
+                <Text style={[opt.chipText, sel && opt.chipTextSel]}>{t}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
+        {/* Done */}
+        <TouchableOpacity style={opt.doneBtn} onPress={onClose} activeOpacity={0.85}>
+          <Text style={opt.doneBtnText}>DONE</Text>
+        </TouchableOpacity>
+      </View>
+    </Modal>
   );
 }
-const sb = StyleSheet.create({
-  row: { flexDirection: 'row', gap: 4, paddingHorizontal: Spacing.md, paddingBottom: 12 },
-  seg: { flex: 1, height: 2, borderRadius: 1, backgroundColor: Colors.border },
-  segActive: { backgroundColor: Colors.gold },
+
+const opt = StyleSheet.create({
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' },
+  sheet: {
+    backgroundColor: '#141210',
+    borderTopLeftRadius: 20, borderTopRightRadius: 20,
+    borderTopWidth: 1, borderColor: Colors.border,
+    paddingHorizontal: Spacing.md, paddingBottom: 36,
+  },
+  handle: {
+    width: 36, height: 4, borderRadius: 2,
+    backgroundColor: Colors.border, alignSelf: 'center',
+    marginTop: 12, marginBottom: 16,
+  },
+  sheetTitle: {
+    fontSize: Typography.sizes.xs, color: Colors.gold,
+    letterSpacing: 3, fontWeight: '700', textAlign: 'center', marginBottom: 20,
+  },
+  sectionLabel: {
+    fontSize: Typography.sizes.xs, color: Colors.textMuted,
+    letterSpacing: 2, fontWeight: '600', marginBottom: Spacing.sm, marginTop: Spacing.md,
+  },
+  row: { flexDirection: 'row', gap: Spacing.sm },
+  formatCard: {
+    flex: 1, paddingVertical: 16, borderRadius: Radius.md,
+    alignItems: 'center', gap: 4,
+    backgroundColor: Colors.surface, borderWidth: 1.5, borderColor: Colors.border,
+  },
+  formatCardSel: { borderColor: Colors.gold, backgroundColor: 'rgba(201,168,76,0.08)' },
+  formatIcon: { fontSize: 22, color: Colors.textMuted },
+  formatIconSel: { color: Colors.gold },
+  formatLabel: { fontSize: Typography.sizes.sm, color: Colors.textMuted, fontWeight: '700', letterSpacing: 2 },
+  formatLabelSel: { color: Colors.gold },
+  formatSub: { fontSize: Typography.sizes.xs, color: Colors.textMuted },
+  chipRow: { flexDirection: 'row', gap: Spacing.sm, flexWrap: 'wrap' },
+  chip: {
+    paddingHorizontal: 16, paddingVertical: 9, borderRadius: Radius.full,
+    borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surface,
+  },
+  chipSel: { borderColor: Colors.gold, backgroundColor: 'rgba(201,168,76,0.12)' },
+  chipText: { fontSize: Typography.sizes.sm, color: Colors.textSecondary, fontWeight: '600' },
+  chipTextSel: { color: Colors.gold },
+  doneBtn: {
+    marginTop: 24, backgroundColor: Colors.gold,
+    borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center',
+  },
+  doneBtnText: { fontSize: Typography.sizes.sm, color: Colors.background, fontWeight: '700', letterSpacing: 2.5 },
 });
 
-// ─── Screen ────────────────────────────────────────────────────────────────
+// ─── Main Screen ───────────────────────────────────────────────────────────
 export default function StoryCreateScreen({ navigation }: any) {
-  const [step, setStep] = useState(1);
+  const [prompt,       setPrompt]       = useState('');
+  const [format,       setFormat]       = useState<'read' | 'watch'>('read');
+  const [length,       setLength]       = useState<string>('Short');
+  const [tone,         setTone]         = useState<string>('Cinematic');
+  const [sheetVisible, setSheetVisible] = useState(false);
+  const inputRef = useRef<any>(null);
 
-  // Selections
-  const [genre,       setGenre]       = useState<string | null>(null);
-  const [format,      setFormat]      = useState<'read' | 'watch' | null>(null);
-  const [length,      setLength]      = useState<string | null>(null);
-  const [tone,        setTone]        = useState<string | null>(null);
-  const [protagonist, setProtagonist] = useState('');
-
-  const fadeAnim = useRef(new Animated.Value(1)).current;
-
-  const transition = (next: number) => {
-    Animated.sequence([
-      Animated.timing(fadeAnim, { toValue: 0, duration: 150, useNativeDriver: true }),
-      Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
-    ]).start();
-    setTimeout(() => setStep(next), 150);
+  const handleSuggestion = (s: typeof SUGGESTIONS[0]) => {
+    setPrompt(s.label);
+    inputRef.current?.focus();
   };
-
-  const goNext = () => transition(step + 1);
-  const goBack = () => {
-    if (step === 1) navigation.goBack();
-    else transition(step - 1);
-  };
-
-  const canContinueStep1 = !!genre;
-  const canContinueStep2 = !!format && !!length && !!tone;
 
   const handleGenerate = () => {
-    const selectedGenre = GENRES.find(g => g.id === genre);
+    if (!prompt.trim()) return;
+    // Map free-text prompt to genre for mock story lookup
+    const matched = SUGGESTIONS.find(s =>
+      prompt.toLowerCase().includes(s.label.toLowerCase())
+    );
     navigation.navigate('StoryResult', {
-      genre:       selectedGenre?.label ?? genre,
-      genreImage:  selectedGenre?.image ?? '',
+      genre:  matched?.genre ?? prompt.trim(),
       format,
       length,
       tone,
-      protagonist: protagonist.trim(),
+      protagonist: '',
     });
   };
 
-  // ─── Step titles ─────────────────────────────────────────────────────────
-  const STEP_TITLES = ['', 'CHOOSE YOUR GENRE', 'SHAPE YOUR STORY', 'YOUR PROTAGONIST'];
+  const canGenerate = prompt.trim().length > 0;
 
   return (
-    <View style={s.root}>
+    <KeyboardAvoidingView
+      style={s.root}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       <StatusBar barStyle="light-content" />
 
-      {/* Header */}
+      {/* ── Header ─────────────────────────────────────────── */}
       <View style={s.header as any}>
-        <TouchableOpacity style={s.backBtn} onPress={goBack} activeOpacity={0.7}>
-          <Text style={s.backArrow}>←</Text>
+        <Text style={s.headerTitle}>CREATE</Text>
+        <TouchableOpacity style={s.optBtn} onPress={() => setSheetVisible(true)} activeOpacity={0.7}>
+          <Text style={s.optBtnText}>
+            {format === 'watch' ? '▶' : '◎'}{'  '}{length}
+          </Text>
+          <Text style={s.optChevron}>⌄</Text>
         </TouchableOpacity>
-        <Text style={s.headerTitle}>{STEP_TITLES[step]}</Text>
-        <View style={s.backBtn} />
       </View>
 
-      {/* Step bar */}
-      <StepBar step={step} total={3} />
+      {/* ── Suggestions list ────────────────────────────────── */}
+      <ScrollView
+        style={s.scroll}
+        contentContainerStyle={s.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Empty state header */}
+        <View style={s.emptyHeader}>
+          <Text style={s.emptyIcon}>✦</Text>
+          <Text style={s.emptyTitle}>What story shall{'\n'}we craft today?</Text>
+          <Text style={s.emptySub}>Choose a genre or describe your idea below</Text>
+        </View>
 
-      {/* Animated body */}
-      <Animated.View style={[s.body, { opacity: fadeAnim }]}>
-
-        {/* ── STEP 1: Genre ───────────────────────────────────── */}
-        {step === 1 && (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
-            <Text style={s.subLabel}>SELECT A REALM TO ENTER</Text>
-            <View style={s.grid}>
-              {GENRES.map(g => {
-                const sel = genre === g.id;
-                return (
-                  <TouchableOpacity
-                    key={g.id}
-                    style={[s.genreCard, sel && s.genreCardSel]}
-                    onPress={() => setGenre(g.id)}
-                    activeOpacity={0.85}
-                  >
-                    <ImageBackground
-                      source={{ uri: g.image }}
-                      style={s.genreImg}
-                      imageStyle={{ borderRadius: Radius.md }}
-                      resizeMode="cover"
-                    >
-                      <View style={s.genreOverlay} />
-                      <Text style={s.genreEmoji}>{g.emoji}</Text>
-                      <Text style={s.genreLabel}>{g.label}</Text>
-                      {sel && (
-                        <View style={s.checkBadge}>
-                          <Text style={s.checkIcon}>✓</Text>
-                        </View>
-                      )}
-                    </ImageBackground>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-            <View style={{ height: 120 }} />
-          </ScrollView>
-        )}
-
-        {/* ── STEP 2: Shape ───────────────────────────────────── */}
-        {step === 2 && (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
-
-            {/* Format */}
-            <Text style={s.sectionLabel}>FORMAT</Text>
-            <View style={s.formatRow}>
-              {(['read', 'watch'] as const).map(f => {
-                const sel = format === f;
-                return (
-                  <TouchableOpacity
-                    key={f}
-                    style={[s.formatCard, sel && s.formatCardSel]}
-                    onPress={() => setFormat(f)}
-                    activeOpacity={0.85}
-                  >
-                    <Text style={[s.formatIcon, sel && s.formatIconSel]}>
-                      {f === 'read' ? '◎' : '▶'}
-                    </Text>
-                    <Text style={[s.formatTitle, sel && s.formatTitleSel]}>
-                      {f === 'read' ? 'READ' : 'WATCH'}
-                    </Text>
-                    <Text style={s.formatSub}>
-                      {f === 'read' ? 'Written story' : 'Visual narrative'}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            {/* Length */}
-            <Text style={s.sectionLabel}>LENGTH</Text>
-            <View style={s.chipRow}>
-              {LENGTHS.map(l => {
-                const sel = length === l;
-                return (
-                  <TouchableOpacity
-                    key={l}
-                    style={[s.chip, sel && s.chipSel]}
-                    onPress={() => setLength(l)}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={[s.chipText, sel && s.chipTextSel]}>{l}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            {/* Tone */}
-            <Text style={s.sectionLabel}>TONE</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}
-              contentContainerStyle={s.toneRow}>
-              {TONES.map(t => {
-                const sel = tone === t;
-                return (
-                  <TouchableOpacity
-                    key={t}
-                    style={[s.chip, sel && s.chipSel]}
-                    onPress={() => setTone(t)}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={[s.chipText, sel && s.chipTextSel]}>{t}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-
-            <View style={{ height: 120 }} />
-          </ScrollView>
-        )}
-
-        {/* ── STEP 3: Protagonist ─────────────────────────────── */}
-        {step === 3 && (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}
-            keyboardShouldPersistTaps="handled">
-            <Text style={s.subLabel}>OPTIONAL — SKIP TO GENERATE</Text>
-
-            <Text style={s.sectionLabel}>NAME YOUR HERO</Text>
-            <View style={s.inputWrap}>
-              <TextInput
-                style={s.input as any}
-                value={protagonist}
-                onChangeText={setProtagonist}
-                placeholder="Enter a name or archetype..."
-                placeholderTextColor={Colors.textMuted}
-                autoCapitalize="words"
-                returnKeyType="done"
-                maxLength={40}
-              />
-            </View>
-
-            <Text style={s.sectionLabel}>POPULAR ARCHETYPES</Text>
-            <View style={s.archetypeGrid}>
-              {ARCHETYPES.map(a => (
-                <TouchableOpacity
-                  key={a}
-                  style={[s.archetypeChip, protagonist === a && s.chipSel]}
-                  onPress={() => setProtagonist(protagonist === a ? '' : a)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[s.archetypeText, protagonist === a && s.chipTextSel]}>{a}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            {/* Summary card */}
-            <View style={s.summaryCard}>
-              <Text style={s.summaryTitle}>YOUR STORY</Text>
-              {[
-                { label: 'Genre',  value: GENRES.find(g => g.id === genre)?.label },
-                { label: 'Format', value: format === 'read' ? '◎ READ' : '▶ WATCH' },
-                { label: 'Length', value: length },
-                { label: 'Tone',   value: tone },
-                protagonist.trim()
-                  ? { label: 'Hero', value: protagonist.trim() }
-                  : null,
-              ].filter(Boolean).map(row => (
-                <View key={row!.label} style={s.summaryRow}>
-                  <Text style={s.summaryLabel}>{row!.label}</Text>
-                  <Text style={s.summaryValue}>{row!.value}</Text>
-                </View>
-              ))}
-            </View>
-
-            <View style={{ height: 120 }} />
-          </ScrollView>
-        )}
-
-      </Animated.View>
-
-      {/* Footer CTA */}
-      <View style={s.footer}>
-        {step < 3 ? (
+        {/* Suggestion rows */}
+        {SUGGESTIONS.map((item, idx) => (
           <TouchableOpacity
-            style={[s.cta, !(step === 1 ? canContinueStep1 : canContinueStep2) && s.ctaDisabled]}
-            onPress={goNext}
-            disabled={step === 1 ? !canContinueStep1 : !canContinueStep2}
-            activeOpacity={0.85}
+            key={item.id}
+            style={[s.suggRow, idx === SUGGESTIONS.length - 1 && s.suggRowLast]}
+            onPress={() => handleSuggestion(item)}
+            activeOpacity={0.7}
           >
-            <Text style={[s.ctaText, !(step === 1 ? canContinueStep1 : canContinueStep2) && s.ctaTextDisabled]}>
-              CONTINUE →
-            </Text>
+            <View style={s.suggIconWrap}>
+              <Text style={s.suggIcon}>{item.icon}</Text>
+            </View>
+            <View style={s.suggText}>
+              <Text style={s.suggLabel}>{item.label}</Text>
+              <Text style={s.suggSub}>{item.sub}</Text>
+            </View>
+            <Text style={s.suggArrow}>›</Text>
           </TouchableOpacity>
-        ) : (
-          <TouchableOpacity style={s.cta} onPress={handleGenerate} activeOpacity={0.85}>
-            <Text style={s.ctaText}>✦  GENERATE STORY</Text>
-          </TouchableOpacity>
-        )}
+        ))}
+
+        <View style={{ height: 16 }} />
+      </ScrollView>
+
+      {/* ── Input bar ───────────────────────────────────────── */}
+      <View style={s.inputBar as any}>
+        {/* + Options button */}
+        <TouchableOpacity style={s.addBtn} onPress={() => setSheetVisible(true)} activeOpacity={0.8}>
+          <Text style={s.addBtnText}>＋</Text>
+        </TouchableOpacity>
+
+        {/* Text input */}
+        <TextInput
+          ref={inputRef}
+          style={s.input as any}
+          value={prompt}
+          onChangeText={setPrompt}
+          placeholder="Describe your story..."
+          placeholderTextColor={Colors.textMuted}
+          multiline
+          returnKeyType="default"
+          maxLength={200}
+        />
+
+        {/* Generate button */}
+        <TouchableOpacity
+          style={[s.sendBtn, canGenerate && s.sendBtnActive]}
+          onPress={handleGenerate}
+          disabled={!canGenerate}
+          activeOpacity={0.85}
+        >
+          <Text style={[s.sendBtnText, canGenerate && s.sendBtnTextActive]}>→</Text>
+        </TouchableOpacity>
       </View>
 
+      {/* ── Bottom Nav ──────────────────────────────────────── */}
       <BottomNav active="create" onNavigate={(sc) => navigation.navigate(sc)} />
-    </View>
+
+      {/* ── Options sheet ───────────────────────────────────── */}
+      <OptionsSheet
+        visible={sheetVisible}
+        onClose={() => setSheetVisible(false)}
+        format={format} setFormat={setFormat}
+        length={length} setLength={setLength}
+        tone={tone}     setTone={setTone}
+      />
+    </KeyboardAvoidingView>
   );
 }
 
@@ -303,117 +290,97 @@ const s = StyleSheet.create({
 
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: Spacing.md, paddingVertical: Spacing.md,
-    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight ?? 0) + Spacing.md : Spacing.md,
+    paddingHorizontal: Spacing.md, paddingVertical: 14,
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight ?? 0) + 14 : 14,
     borderBottomWidth: 1, borderBottomColor: Colors.border,
     ...(Platform.OS === 'web' ? { backdropFilter: 'blur(18px)', backgroundColor: 'rgba(10,10,10,0.85)' } : {}),
   },
-  backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  backArrow: { fontSize: 22, color: Colors.gold },
-  headerTitle: { fontSize: Typography.sizes.sm, color: Colors.text, letterSpacing: 3, fontWeight: '700' },
-
-  body: { flex: 1 },
-  scroll: { paddingHorizontal: Spacing.md, paddingTop: Spacing.lg },
-  subLabel: {
-    fontSize: Typography.sizes.xs, color: Colors.textMuted,
-    letterSpacing: 2.5, fontWeight: '600', marginBottom: Spacing.md, textAlign: 'center',
+  headerTitle: {
+    fontSize: Typography.sizes.sm, color: Colors.text,
+    letterSpacing: 3, fontWeight: '700',
   },
-  sectionLabel: {
-    fontSize: Typography.sizes.xs, color: Colors.gold,
-    letterSpacing: 2.5, fontWeight: '700', marginBottom: Spacing.sm, marginTop: Spacing.md,
-  },
-
-  // Genre grid
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
-  genreCard: {
-    width: CARD_W, height: 140, borderRadius: Radius.md,
-    overflow: 'hidden', borderWidth: 2, borderColor: Colors.border,
-  },
-  genreCardSel: { borderColor: Colors.gold },
-  genreImg: { flex: 1, justifyContent: 'flex-end', alignItems: 'center' },
-  genreOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.55)' },
-  genreEmoji: { fontSize: 28, marginBottom: 4 },
-  genreLabel: {
-    color: Colors.text, fontSize: Typography.sizes.sm,
-    fontFamily: Typography.fontSerif, fontWeight: '700',
-    letterSpacing: 1, marginBottom: 12, textAlign: 'center',
-  },
-  checkBadge: {
-    position: 'absolute', top: 8, right: 8,
-    width: 24, height: 24, borderRadius: Radius.full,
-    backgroundColor: Colors.gold, alignItems: 'center', justifyContent: 'center',
-  },
-  checkIcon: { fontSize: 12, color: Colors.background, fontWeight: '700' },
-
-  // Format
-  formatRow: { flexDirection: 'row', gap: Spacing.sm },
-  formatCard: {
-    flex: 1, paddingVertical: 20, borderRadius: Radius.md,
-    alignItems: 'center', gap: 6,
-    backgroundColor: Colors.surface, borderWidth: 2, borderColor: Colors.border,
-  },
-  formatCardSel: { borderColor: Colors.gold, backgroundColor: 'rgba(201,168,76,0.08)' },
-  formatIcon: { fontSize: 26, color: Colors.textMuted },
-  formatIconSel: { color: Colors.gold },
-  formatTitle: { fontSize: Typography.sizes.sm, color: Colors.textMuted, fontWeight: '700', letterSpacing: 2 },
-  formatTitleSel: { color: Colors.gold },
-  formatSub: { fontSize: Typography.sizes.xs, color: Colors.textMuted, letterSpacing: 1 },
-
-  // Chips
-  chipRow: { flexDirection: 'row', gap: Spacing.sm },
-  toneRow: { gap: Spacing.sm, paddingRight: Spacing.md },
-  chip: {
-    paddingHorizontal: 16, paddingVertical: 9,
+  optBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 12, paddingVertical: 6,
     borderRadius: Radius.full, borderWidth: 1, borderColor: Colors.border,
     backgroundColor: Colors.surface,
   },
-  chipSel: { borderColor: Colors.gold, backgroundColor: 'rgba(201,168,76,0.12)' },
-  chipText: { fontSize: Typography.sizes.sm, color: Colors.textSecondary, fontWeight: '600' },
-  chipTextSel: { color: Colors.gold },
+  optBtnText: { fontSize: Typography.sizes.xs, color: Colors.gold, fontWeight: '600', letterSpacing: 1 },
+  optChevron: { fontSize: 14, color: Colors.textMuted },
 
-  // Protagonist
-  inputWrap: {
-    borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.md,
-    backgroundColor: Colors.surface, paddingHorizontal: 14,
+  // Scroll
+  scroll: { flex: 1 },
+  scrollContent: { paddingTop: 32, paddingBottom: 8 },
+
+  // Empty state header
+  emptyHeader: {
+    alignItems: 'center', paddingHorizontal: Spacing.md,
+    paddingBottom: 36, gap: 8,
   },
+  emptyIcon: { fontSize: 32, color: Colors.gold, marginBottom: 4 },
+  emptyTitle: {
+    fontSize: Typography.sizes.xxl, fontFamily: Typography.fontSerif,
+    color: Colors.text, textAlign: 'center', lineHeight: 36,
+  },
+  emptySub: {
+    fontSize: Typography.sizes.sm, color: Colors.textMuted,
+    textAlign: 'center', letterSpacing: 0.3,
+  },
+
+  // Suggestion rows
+  suggRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: Spacing.md, paddingVertical: 14,
+    borderBottomWidth: 1, borderBottomColor: Colors.border,
+    gap: 14,
+  },
+  suggRowLast: { borderBottomWidth: 0 },
+  suggIconWrap: {
+    width: 44, height: 44, borderRadius: Radius.md,
+    backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  suggIcon: { fontSize: 20 },
+  suggText: { flex: 1, gap: 2 },
+  suggLabel: {
+    fontSize: Typography.sizes.md, color: Colors.text,
+    fontWeight: '600',
+  },
+  suggSub: {
+    fontSize: Typography.sizes.sm, color: Colors.textMuted,
+  },
+  suggArrow: { fontSize: 20, color: Colors.border },
+
+  // Input bar
+  inputBar: {
+    flexDirection: 'row', alignItems: 'flex-end',
+    paddingHorizontal: 12, paddingVertical: 10,
+    borderTopWidth: 1, borderTopColor: Colors.border,
+    backgroundColor: Colors.background, gap: 8,
+    ...(Platform.OS === 'web' ? { backdropFilter: 'blur(18px)', backgroundColor: 'rgba(10,10,10,0.9)' } : {}),
+  },
+  addBtn: {
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  addBtnText: { fontSize: 20, color: Colors.textSecondary, lineHeight: 24 },
   input: {
-    height: 48, color: Colors.text, fontSize: Typography.sizes.md,
+    flex: 1,
+    minHeight: 38, maxHeight: 100,
+    paddingHorizontal: 14, paddingVertical: 9,
+    borderRadius: 20,
+    backgroundColor: Colors.surface,
+    borderWidth: 1, borderColor: Colors.border,
+    color: Colors.text, fontSize: Typography.sizes.md,
     outlineStyle: 'none',
   },
-  archetypeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
-  archetypeChip: {
-    paddingHorizontal: 14, paddingVertical: 9,
-    borderRadius: Radius.full, borderWidth: 1, borderColor: Colors.border,
-    backgroundColor: Colors.surface,
+  sendBtn: {
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border,
+    alignItems: 'center', justifyContent: 'center',
   },
-  archetypeText: { fontSize: Typography.sizes.xs, color: Colors.textSecondary, letterSpacing: 0.5 },
-
-  // Summary
-  summaryCard: {
-    marginTop: Spacing.lg, borderRadius: Radius.md,
-    borderWidth: 1, borderColor: Colors.borderGold,
-    backgroundColor: 'rgba(201,168,76,0.06)', padding: Spacing.md, gap: 10,
-  },
-  summaryTitle: {
-    fontSize: Typography.sizes.xs, color: Colors.gold,
-    letterSpacing: 3, fontWeight: '700', marginBottom: 4,
-  },
-  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  summaryLabel: { fontSize: Typography.sizes.xs, color: Colors.textMuted, letterSpacing: 1.5 },
-  summaryValue: { fontSize: Typography.sizes.sm, color: Colors.text, fontWeight: '600' },
-
-  // Footer
-  footer: {
-    paddingHorizontal: Spacing.md, paddingVertical: Spacing.md,
-    paddingBottom: Platform.OS === 'ios' ? 16 : Spacing.md,
-    borderTopWidth: 1, borderTopColor: Colors.border,
-    backgroundColor: Colors.background,
-  },
-  cta: {
-    backgroundColor: Colors.gold, borderRadius: Radius.md,
-    paddingVertical: 16, alignItems: 'center',
-  },
-  ctaDisabled: { backgroundColor: Colors.border },
-  ctaText: { fontSize: Typography.sizes.sm, color: Colors.background, fontWeight: '700', letterSpacing: 2.5 },
-  ctaTextDisabled: { color: Colors.textMuted },
+  sendBtnActive: { backgroundColor: Colors.gold, borderColor: Colors.gold },
+  sendBtnText: { fontSize: 18, color: Colors.textMuted, fontWeight: '700' },
+  sendBtnTextActive: { color: Colors.background },
 });
