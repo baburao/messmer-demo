@@ -248,6 +248,11 @@ export default function StoryResultScreen({ navigation, route }: any) {
     }
   }, [phase]);
 
+  // True once user has changed either field from the original
+  const hasEdited =
+    (editedTitle !== '' && editedTitle !== story.title) ||
+    (editedBody  !== '' && editedBody  !== story.body);
+
   const handleSave = () => {
     if (saved) return;
     saveGeneratedStory(
@@ -346,10 +351,23 @@ export default function StoryResultScreen({ navigation, route }: any) {
 
           {/* ── Action bar ───────────────────────────────────── */}
           <View style={rs.storyActionBar}>
-            <TouchableOpacity style={rs.iconBtn} onPress={handleRegenerate} activeOpacity={0.7}>
-              <Text style={rs.iconBtnIcon}>↺</Text>
-              <Text style={rs.iconBtnLabel}>Regenerate</Text>
-            </TouchableOpacity>
+            {hasEdited ? (
+              /* After editing: primary action is Add to Story */
+              <TouchableOpacity
+                style={[rs.iconBtn, rs.iconBtnHighlight]}
+                onPress={handleSave}
+                activeOpacity={0.8}
+              >
+                <Text style={[rs.iconBtnIcon, rs.iconBtnIconGold]}>＋</Text>
+                <Text style={[rs.iconBtnLabel, rs.iconBtnLabelGold]}>Add to Story</Text>
+              </TouchableOpacity>
+            ) : (
+              /* Before editing: offer Regenerate */
+              <TouchableOpacity style={rs.iconBtn} onPress={handleRegenerate} activeOpacity={0.7}>
+                <Text style={rs.iconBtnIcon}>↺</Text>
+                <Text style={rs.iconBtnLabel}>Regenerate</Text>
+              </TouchableOpacity>
+            )}
             <View style={rs.iconDivider} />
             <TouchableOpacity style={rs.iconBtn} onPress={handleCreateNew} activeOpacity={0.7}>
               <Text style={rs.iconBtnIcon}>✦</Text>
@@ -362,7 +380,7 @@ export default function StoryResultScreen({ navigation, route }: any) {
             </TouchableOpacity>
           </View>
 
-          {/* ── Save ─────────────────────────────────────────── */}
+          {/* ── Save to feed (always visible) ────────────────── */}
           <View style={rs.actions}>
             <TouchableOpacity
               style={[rs.actionBtn, saved && rs.actionBtnSaved]}
@@ -410,8 +428,8 @@ const rs = StyleSheet.create({
   coverWrap: { height: 300, position: 'relative' },
   cover: { width: '100%', height: 300 },
   coverGrad: {
-    position: 'absolute', top: 80, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.82)',
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.22)',
   },
   tagRow: {
     position: 'absolute', top: 14, left: 14,
@@ -477,9 +495,12 @@ const rs = StyleSheet.create({
     flex: 1, alignItems: 'center', justifyContent: 'center',
     paddingVertical: 12, gap: 4,
   },
+  iconBtnHighlight: { backgroundColor: 'rgba(201,168,76,0.1)' },
   iconDivider: { width: 1, backgroundColor: Colors.border },
   iconBtnIcon: { fontSize: 16, color: Colors.textSecondary },
+  iconBtnIconGold: { color: Colors.gold },
   iconBtnLabel: { fontSize: 10, color: Colors.textMuted, letterSpacing: 1 },
+  iconBtnLabelGold: { color: Colors.gold, fontWeight: '700' },
 
   actions: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
   actionBtn: {
