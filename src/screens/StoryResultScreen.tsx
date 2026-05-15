@@ -492,26 +492,47 @@ export default function StoryResultScreen({ navigation, route }: any) {
             </View>
           </View>
 
-          {/* Story body + inline edit hint */}
+          {/* Story body */}
           <View style={rs.bodyWrap}>
-            <View style={rs.bodyHeader}>
-              <Text style={rs.bodyHeaderLabel}>STORY</Text>
-              <TouchableOpacity
-                style={rs.editBtn}
-                onPress={() => setEditVisible(true)}
-                activeOpacity={0.75}
-              >
-                <Text style={rs.editBtnText}>✎  EDIT</Text>
-              </TouchableOpacity>
-            </View>
             {displayBody.split('\n\n').map((para, i) => (
               <Text key={i} style={rs.para}>{para}</Text>
             ))}
           </View>
 
+          {/* ── ChatGPT-style action bar ─────────────────────── */}
+          <View style={rs.storyActionBar}>
+            {/* Edit — primary, full width */}
+            <TouchableOpacity
+              style={rs.editStoryBtn}
+              onPress={() => setEditVisible(true)}
+              activeOpacity={0.8}
+            >
+              <Text style={rs.editStoryIcon}>✎</Text>
+              <Text style={rs.editStoryText}>Edit Story</Text>
+            </TouchableOpacity>
+
+            {/* Divider */}
+            <View style={rs.actionBarDivider} />
+
+            {/* Secondary icon actions */}
+            <View style={rs.actionBarIcons}>
+              <TouchableOpacity style={rs.iconBtn} onPress={handleRegenerate} activeOpacity={0.7}>
+                <Text style={rs.iconBtnIcon}>↺</Text>
+                <Text style={rs.iconBtnLabel}>Regenerate</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={rs.iconBtn} onPress={handleCreateNew} activeOpacity={0.7}>
+                <Text style={rs.iconBtnIcon}>✦</Text>
+                <Text style={rs.iconBtnLabel}>New</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={rs.iconBtn} onPress={handleGoHome} activeOpacity={0.7}>
+                <Text style={rs.iconBtnIcon}>⌂</Text>
+                <Text style={rs.iconBtnLabel}>Home</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
           {/* Actions */}
           <View style={rs.actions}>
-            {/* Primary: Save */}
             <TouchableOpacity
               style={[rs.actionBtn, saved && rs.actionBtnSaved]}
               onPress={handleSave}
@@ -520,21 +541,6 @@ export default function StoryResultScreen({ navigation, route }: any) {
               <Text style={[rs.actionBtnText, saved && rs.actionBtnTextSaved]}>
                 {saved ? '✓  SAVED TO FEED' : '＋  SAVE TO FEED'}
               </Text>
-            </TouchableOpacity>
-
-            {/* Secondary row: Edit + Regenerate + Create New */}
-            <View style={rs.secondaryRow}>
-              <TouchableOpacity style={rs.secondaryBtn} onPress={handleRegenerate} activeOpacity={0.8}>
-                <Text style={rs.secondaryBtnText}>↺  REGENERATE</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[rs.secondaryBtn, rs.createNewBtn]} onPress={handleCreateNew} activeOpacity={0.8}>
-                <Text style={rs.createNewText}>✦  CREATE NEW</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Go to Home feed */}
-            <TouchableOpacity style={rs.homeFeedBtn} onPress={handleGoHome} activeOpacity={0.8}>
-              <Text style={rs.homeFeedText}>VIEW HOME FEED →</Text>
             </TouchableOpacity>
           </View>
 
@@ -609,28 +615,39 @@ const rs = StyleSheet.create({
   coverProt: { color: Colors.textSecondary, fontSize: 12, fontStyle: 'italic' },
 
   bodyWrap: { paddingHorizontal: 20, paddingTop: 24, gap: 14 },
-  bodyHeader: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  bodyHeaderLabel: {
-    fontSize: Typography.sizes.xs, color: Colors.gold,
-    letterSpacing: 2.5, fontWeight: '700',
-  },
-  editBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: 12, paddingVertical: 6,
-    borderRadius: Radius.full,
-    borderWidth: 1, borderColor: Colors.borderGold,
-    backgroundColor: 'rgba(201,168,76,0.08)',
-  },
-  editBtnText: {
-    fontSize: Typography.sizes.xs, color: Colors.gold,
-    fontWeight: '700', letterSpacing: 1.5,
-  },
   para: { color: Colors.textSecondary, fontSize: 15, lineHeight: 25, fontFamily: Typography.fontSerif },
 
-  actions: { paddingHorizontal: 20, paddingTop: 28, gap: 10 },
+  // ChatGPT-style action bar below the story
+  storyActionBar: {
+    marginHorizontal: 20, marginTop: 20,
+    borderRadius: Radius.md,
+    borderWidth: 1, borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+    overflow: 'hidden',
+  },
+  editStoryBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 8, paddingVertical: 14,
+    backgroundColor: 'rgba(201,168,76,0.07)',
+  },
+  editStoryIcon: { fontSize: 18, color: Colors.gold },
+  editStoryText: {
+    fontSize: Typography.sizes.md, color: Colors.gold,
+    fontWeight: '700', letterSpacing: 1,
+  },
+  actionBarDivider: { height: 1, backgroundColor: Colors.border },
+  actionBarIcons: {
+    flexDirection: 'row',
+  },
+  iconBtn: {
+    flex: 1, alignItems: 'center', justifyContent: 'center',
+    paddingVertical: 12, gap: 4,
+    borderRightWidth: 1, borderRightColor: Colors.border,
+  },
+  iconBtnIcon: { fontSize: 16, color: Colors.textSecondary },
+  iconBtnLabel: { fontSize: 10, color: Colors.textMuted, letterSpacing: 1 },
+
+  actions: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
   actionBtn: {
     backgroundColor: Colors.gold, borderRadius: Radius.md,
     paddingVertical: 15, alignItems: 'center',
@@ -641,19 +658,4 @@ const rs = StyleSheet.create({
   },
   actionBtnText: { fontSize: Typography.sizes.sm, color: Colors.background, fontWeight: '700', letterSpacing: 2 },
   actionBtnTextSaved: { color: Colors.gold },
-
-  secondaryRow: { flexDirection: 'row', gap: 10 },
-  secondaryBtn: {
-    flex: 1, borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center',
-    borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surface,
-  },
-  secondaryBtnText: { fontSize: Typography.sizes.xs, color: Colors.textSecondary, fontWeight: '600', letterSpacing: 1.5 },
-  createNewBtn: { borderColor: Colors.borderGold, backgroundColor: 'rgba(201,168,76,0.07)' },
-  createNewText: { fontSize: Typography.sizes.xs, color: Colors.gold, fontWeight: '700', letterSpacing: 1.5 },
-
-  homeFeedBtn: {
-    borderRadius: Radius.md, paddingVertical: 13, alignItems: 'center',
-    borderWidth: 1, borderColor: Colors.border,
-  },
-  homeFeedText: { fontSize: Typography.sizes.xs, color: Colors.textMuted, letterSpacing: 2 },
 });
