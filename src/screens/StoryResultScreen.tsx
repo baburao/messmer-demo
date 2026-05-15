@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   Image, Animated, Platform, StatusBar, Easing,
+  Modal, TextInput, KeyboardAvoidingView,
 } from 'react-native';
 import { Colors, Typography, Radius, Spacing } from '../theme';
 import { saveGeneratedStory } from '../navigation/AppNavigator';
@@ -227,23 +228,196 @@ const gs = StyleSheet.create({
   barFill: { height: '100%', backgroundColor: Colors.gold, borderRadius: 1 },
 });
 
+// ─── Edit Modal ────────────────────────────────────────────────────────────
+function EditModal({
+  visible, title, body,
+  onSave, onClose,
+}: {
+  visible: boolean;
+  title: string;
+  body: string;
+  onSave: (t: string, b: string) => void;
+  onClose: () => void;
+}) {
+  const [draftTitle, setDraftTitle] = useState(title);
+  const [draftBody,  setDraftBody]  = useState(body);
+
+  // Sync drafts when modal opens with new content
+  useEffect(() => {
+    if (visible) { setDraftTitle(title); setDraftBody(body); }
+  }, [visible, title, body]);
+
+  return (
+    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+      <KeyboardAvoidingView
+        style={em.root}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <StatusBar barStyle="light-content" />
+
+        {/* Header */}
+        <View style={em.header as any}>
+          <TouchableOpacity style={em.headerBtn} onPress={onClose} activeOpacity={0.7}>
+            <Text style={em.cancelText}>CANCEL</Text>
+          </TouchableOpacity>
+          <Text style={em.headerTitle}>EDIT STORY</Text>
+          <TouchableOpacity
+            style={em.headerBtn}
+            onPress={() => onSave(draftTitle.trim() || title, draftBody.trim() || body)}
+            activeOpacity={0.7}
+          >
+            <Text style={em.saveText}>SAVE</Text>
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView style={em.scroll} contentContainerStyle={em.scrollContent}
+          keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+
+          {/* Title field */}
+          <Text style={em.fieldLabel}>TITLE</Text>
+          <View style={em.titleWrap}>
+            <TextInput
+              style={em.titleInput as any}
+              value={draftTitle}
+              onChangeText={setDraftTitle}
+              placeholder="Story title..."
+              placeholderTextColor={Colors.textMuted}
+              maxLength={80}
+              returnKeyType="next"
+            />
+          </View>
+
+          {/* Char count */}
+          <Text style={em.charCount}>{draftTitle.length} / 80</Text>
+
+          {/* Divider */}
+          <View style={em.divider} />
+
+          {/* Body field */}
+          <Text style={em.fieldLabel}>STORY</Text>
+          <View style={em.bodyWrap}>
+            <TextInput
+              style={em.bodyInput as any}
+              value={draftBody}
+              onChangeText={setDraftBody}
+              placeholder="Your story text..."
+              placeholderTextColor={Colors.textMuted}
+              multiline
+              textAlignVertical="top"
+              scrollEnabled={false}
+              maxLength={8000}
+            />
+          </View>
+          <Text style={em.charCount}>{draftBody.length} / 8000 characters</Text>
+
+          <View style={{ height: 40 }} />
+        </ScrollView>
+
+        {/* Sticky save button */}
+        <View style={em.footer}>
+          <TouchableOpacity
+            style={em.saveBtn}
+            onPress={() => onSave(draftTitle.trim() || title, draftBody.trim() || body)}
+            activeOpacity={0.85}
+          >
+            <Text style={em.saveBtnText}>✓  SAVE CHANGES</Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+const em = StyleSheet.create({
+  root: { flex: 1, backgroundColor: Colors.background },
+  header: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: Spacing.md, paddingVertical: 14,
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight ?? 0) + 14 : 14,
+    borderBottomWidth: 1, borderBottomColor: Colors.border,
+    backgroundColor: Colors.background,
+    ...(Platform.OS === 'web' ? { backdropFilter: 'blur(18px)' } : {}),
+  },
+  headerBtn: { minWidth: 60 },
+  headerTitle: { fontSize: Typography.sizes.xs, color: Colors.text, letterSpacing: 3, fontWeight: '700' },
+  cancelText: { fontSize: Typography.sizes.xs, color: Colors.textMuted, letterSpacing: 1.5 },
+  saveText: { fontSize: Typography.sizes.xs, color: Colors.gold, fontWeight: '700', letterSpacing: 1.5, textAlign: 'right' },
+
+  scroll: { flex: 1 },
+  scrollContent: { paddingHorizontal: Spacing.md, paddingTop: Spacing.lg },
+
+  fieldLabel: {
+    fontSize: Typography.sizes.xs, color: Colors.gold,
+    letterSpacing: 2.5, fontWeight: '700', marginBottom: Spacing.sm,
+  },
+  titleWrap: {
+    borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.md,
+    backgroundColor: Colors.surface, paddingHorizontal: 14,
+  },
+  titleInput: {
+    height: 48, color: Colors.text,
+    fontSize: Typography.sizes.lg, fontFamily: Typography.fontSerif,
+    outlineStyle: 'none',
+  },
+  charCount: {
+    fontSize: 11, color: Colors.textMuted,
+    textAlign: 'right', marginTop: 4, marginBottom: Spacing.md,
+  },
+  divider: { height: 1, backgroundColor: Colors.border, marginVertical: Spacing.md },
+  bodyWrap: {
+    borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.md,
+    backgroundColor: Colors.surface, padding: 14, minHeight: 320,
+  },
+  bodyInput: {
+    color: Colors.text, fontSize: Typography.sizes.md,
+    fontFamily: Typography.fontSerif, lineHeight: 26,
+    minHeight: 300, outlineStyle: 'none',
+  },
+
+  footer: {
+    paddingHorizontal: Spacing.md, paddingVertical: Spacing.md,
+    paddingBottom: Platform.OS === 'ios' ? 28 : Spacing.md,
+    borderTopWidth: 1, borderTopColor: Colors.border,
+    backgroundColor: Colors.background,
+  },
+  saveBtn: {
+    backgroundColor: Colors.gold, borderRadius: Radius.md,
+    paddingVertical: 15, alignItems: 'center',
+  },
+  saveBtnText: { fontSize: Typography.sizes.sm, color: Colors.background, fontWeight: '700', letterSpacing: 2 },
+});
+
 // ─── Main Screen ───────────────────────────────────────────────────────────
 export default function StoryResultScreen({ navigation, route }: any) {
   const { genre, format, length, tone, protagonist } = route.params ?? {};
 
-  const [phase, setPhase] = useState<'generating' | 'result'>('generating');
-  const [saved, setSaved] = useState(false);
+  const [phase,        setPhase]        = useState<'generating' | 'result'>('generating');
+  const [saved,        setSaved]        = useState(false);
+  const [editVisible,  setEditVisible]  = useState(false);
+  const [editedTitle,  setEditedTitle]  = useState('');
+  const [editedBody,   setEditedBody]   = useState('');
 
-  const story  = getFallbackStory(genre);
+  const story   = getFallbackStory(genre);
   const isWatch = format === 'watch';
+
+  // Initialise editable content once story loads
+  useEffect(() => {
+    if (phase === 'result' && !editedTitle) {
+      setEditedTitle(story.title);
+      setEditedBody(story.body);
+    }
+  }, [phase]);
+
+  const displayTitle = editedTitle || story.title;
+  const displayBody  = editedBody  || story.body;
 
   const handleSave = () => {
     if (saved) return;
     saveGeneratedStory(
       {
-        title: story.title,
+        title: displayTitle,
         category: genre?.toUpperCase() ?? 'STORY',
-        desc: story.body.slice(0, 100) + '...',
+        desc: displayBody.slice(0, 100) + '...',
         image: story.image,
       },
       isWatch ? 'video' : 'storybook',
@@ -251,9 +425,18 @@ export default function StoryResultScreen({ navigation, route }: any) {
     setSaved(true);
   };
 
+  const handleEditSave = (newTitle: string, newBody: string) => {
+    setEditedTitle(newTitle);
+    setEditedBody(newBody);
+    setSaved(false); // content changed — require re-save
+    setEditVisible(false);
+  };
+
   const handleRegenerate = () => {
     setPhase('generating');
     setSaved(false);
+    setEditedTitle('');
+    setEditedBody('');
   };
 
   const handleCreateNew = () => {
@@ -304,14 +487,24 @@ export default function StoryResultScreen({ navigation, route }: any) {
             {/* Title over image */}
             <View style={rs.coverContent}>
               {genre && <Text style={rs.coverGenre}>{genre.toUpperCase()}</Text>}
-              <Text style={rs.coverTitle}>{story.title}</Text>
+              <Text style={rs.coverTitle}>{displayTitle}</Text>
               {protagonist ? <Text style={rs.coverProt}>feat. {protagonist}</Text> : null}
             </View>
           </View>
 
-          {/* Story body */}
+          {/* Story body + inline edit hint */}
           <View style={rs.bodyWrap}>
-            {story.body.split('\n\n').map((para, i) => (
+            <View style={rs.bodyHeader}>
+              <Text style={rs.bodyHeaderLabel}>STORY</Text>
+              <TouchableOpacity
+                style={rs.editBtn}
+                onPress={() => setEditVisible(true)}
+                activeOpacity={0.75}
+              >
+                <Text style={rs.editBtnText}>✎  EDIT</Text>
+              </TouchableOpacity>
+            </View>
+            {displayBody.split('\n\n').map((para, i) => (
               <Text key={i} style={rs.para}>{para}</Text>
             ))}
           </View>
@@ -329,7 +522,7 @@ export default function StoryResultScreen({ navigation, route }: any) {
               </Text>
             </TouchableOpacity>
 
-            {/* Secondary row: Regenerate + Create New */}
+            {/* Secondary row: Edit + Regenerate + Create New */}
             <View style={rs.secondaryRow}>
               <TouchableOpacity style={rs.secondaryBtn} onPress={handleRegenerate} activeOpacity={0.8}>
                 <Text style={rs.secondaryBtnText}>↺  REGENERATE</Text>
@@ -351,6 +544,15 @@ export default function StoryResultScreen({ navigation, route }: any) {
 
       {/* Bottom nav — always visible so user can jump anywhere */}
       <BottomNav active="create" onNavigate={(s) => navigation.navigate(s)} />
+
+      {/* Edit modal */}
+      <EditModal
+        visible={editVisible}
+        title={displayTitle}
+        body={displayBody}
+        onSave={handleEditSave}
+        onClose={() => setEditVisible(false)}
+      />
     </View>
   );
 }
@@ -406,7 +608,26 @@ const rs = StyleSheet.create({
   coverTitle: { color: Colors.text, fontSize: 26, fontFamily: Typography.fontSerif, lineHeight: 32 },
   coverProt: { color: Colors.textSecondary, fontSize: 12, fontStyle: 'italic' },
 
-  bodyWrap: { paddingHorizontal: 20, paddingTop: 24, gap: 16 },
+  bodyWrap: { paddingHorizontal: 20, paddingTop: 24, gap: 14 },
+  bodyHeader: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  bodyHeaderLabel: {
+    fontSize: Typography.sizes.xs, color: Colors.gold,
+    letterSpacing: 2.5, fontWeight: '700',
+  },
+  editBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 12, paddingVertical: 6,
+    borderRadius: Radius.full,
+    borderWidth: 1, borderColor: Colors.borderGold,
+    backgroundColor: 'rgba(201,168,76,0.08)',
+  },
+  editBtnText: {
+    fontSize: Typography.sizes.xs, color: Colors.gold,
+    fontWeight: '700', letterSpacing: 1.5,
+  },
   para: { color: Colors.textSecondary, fontSize: 15, lineHeight: 25, fontFamily: Typography.fontSerif },
 
   actions: { paddingHorizontal: 20, paddingTop: 28, gap: 10 },
