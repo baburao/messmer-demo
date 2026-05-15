@@ -5,13 +5,13 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { Home01Icon, Search01Icon, UserCircleIcon } from '@hugeicons/core-free-icons';
 
 interface Props {
-  active: 'home' | 'search' | 'create' | 'profile';
+  active: 'home' | 'explore' | 'create' | 'profile';
   onNavigate: (screen: string) => void;
 }
 
 const TABS = [
   { key: 'home',    label: 'HOME',    screen: 'Home',        icon: Home01Icon,     isHuge: true  },
-  { key: 'search',  label: 'SEARCH',  screen: 'Search',      icon: Search01Icon,   isHuge: true  },
+  { key: 'explore', label: 'EXPLORE', screen: 'Search',      icon: Search01Icon,   isHuge: true  },
   { key: 'create',  label: 'CREATE',  screen: 'StoryCreate', icon: null,           isHuge: false, unicode: '✎' },
   { key: 'profile', label: 'PROFILE', screen: 'Profile',     icon: UserCircleIcon, isHuge: true  },
 ];
