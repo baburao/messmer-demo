@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   Image, Animated, Platform, StatusBar, Easing,
-  Modal, TextInput, KeyboardAvoidingView,
+  TextInput, KeyboardAvoidingView,
 } from 'react-native';
 import { Colors, Typography, Radius, Spacing } from '../theme';
 import { saveGeneratedStory } from '../navigation/AppNavigator';
@@ -228,208 +228,38 @@ const gs = StyleSheet.create({
   barFill: { height: '100%', backgroundColor: Colors.gold, borderRadius: 1 },
 });
 
-// ─── Edit Modal ────────────────────────────────────────────────────────────
-function EditModal({
-  visible, title, body,
-  onSave, onClose,
-}: {
-  visible: boolean;
-  title: string;
-  body: string;
-  onSave: (t: string, b: string) => void;
-  onClose: () => void;
-}) {
-  const [draftTitle, setDraftTitle] = useState(title);
-  const [draftBody,  setDraftBody]  = useState(body);
-
-  // Sync drafts when modal opens with new content
-  useEffect(() => {
-    if (visible) { setDraftTitle(title); setDraftBody(body); }
-  }, [visible, title, body]);
-
-  return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        style={em.root}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <StatusBar barStyle="light-content" />
-
-        {/* Header */}
-        <View style={em.header as any}>
-          <TouchableOpacity style={em.headerBtn} onPress={onClose} activeOpacity={0.7}>
-            <Text style={em.cancelText}>CANCEL</Text>
-          </TouchableOpacity>
-          <Text style={em.headerTitle}>EDIT STORY</Text>
-          <TouchableOpacity
-            style={em.headerBtn}
-            onPress={() => onSave(draftTitle.trim() || title, draftBody.trim() || body)}
-            activeOpacity={0.7}
-          >
-            <Text style={em.saveText}>SAVE</Text>
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView style={em.scroll} contentContainerStyle={em.scrollContent}
-          keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-
-          {/* Title field */}
-          <Text style={em.fieldLabel}>TITLE</Text>
-          <View style={em.titleWrap}>
-            <TextInput
-              style={em.titleInput as any}
-              value={draftTitle}
-              onChangeText={setDraftTitle}
-              placeholder="Story title..."
-              placeholderTextColor={Colors.textMuted}
-              maxLength={80}
-              returnKeyType="next"
-            />
-          </View>
-
-          {/* Char count */}
-          <Text style={em.charCount}>{draftTitle.length} / 80</Text>
-
-          {/* Divider */}
-          <View style={em.divider} />
-
-          {/* Body field */}
-          <Text style={em.fieldLabel}>STORY</Text>
-          <View style={em.bodyWrap}>
-            <TextInput
-              style={em.bodyInput as any}
-              value={draftBody}
-              onChangeText={setDraftBody}
-              placeholder="Your story text..."
-              placeholderTextColor={Colors.textMuted}
-              multiline
-              textAlignVertical="top"
-              scrollEnabled={false}
-              maxLength={8000}
-            />
-          </View>
-          <Text style={em.charCount}>{draftBody.length} / 8000 characters</Text>
-
-          <View style={{ height: 40 }} />
-        </ScrollView>
-
-        {/* Sticky save button */}
-        <View style={em.footer}>
-          <TouchableOpacity
-            style={em.saveBtn}
-            onPress={() => onSave(draftTitle.trim() || title, draftBody.trim() || body)}
-            activeOpacity={0.85}
-          >
-            <Text style={em.saveBtnText}>✓  SAVE CHANGES</Text>
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
-    </Modal>
-  );
-}
-
-const em = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.background },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: Spacing.md, paddingVertical: 14,
-    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight ?? 0) + 14 : 14,
-    borderBottomWidth: 1, borderBottomColor: Colors.border,
-    backgroundColor: Colors.background,
-    ...(Platform.OS === 'web' ? { backdropFilter: 'blur(18px)' } : {}),
-  },
-  headerBtn: { minWidth: 60 },
-  headerTitle: { fontSize: Typography.sizes.xs, color: Colors.text, letterSpacing: 3, fontWeight: '700' },
-  cancelText: { fontSize: Typography.sizes.xs, color: Colors.textMuted, letterSpacing: 1.5 },
-  saveText: { fontSize: Typography.sizes.xs, color: Colors.gold, fontWeight: '700', letterSpacing: 1.5, textAlign: 'right' },
-
-  scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: Spacing.md, paddingTop: Spacing.lg },
-
-  fieldLabel: {
-    fontSize: Typography.sizes.xs, color: Colors.gold,
-    letterSpacing: 2.5, fontWeight: '700', marginBottom: Spacing.sm,
-  },
-  titleWrap: {
-    borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.md,
-    backgroundColor: Colors.surface, paddingHorizontal: 14,
-  },
-  titleInput: {
-    height: 48, color: Colors.text,
-    fontSize: Typography.sizes.lg, fontFamily: Typography.fontSerif,
-    outlineStyle: 'none',
-  },
-  charCount: {
-    fontSize: 11, color: Colors.textMuted,
-    textAlign: 'right', marginTop: 4, marginBottom: Spacing.md,
-  },
-  divider: { height: 1, backgroundColor: Colors.border, marginVertical: Spacing.md },
-  bodyWrap: {
-    borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.md,
-    backgroundColor: Colors.surface, padding: 14, minHeight: 320,
-  },
-  bodyInput: {
-    color: Colors.text, fontSize: Typography.sizes.md,
-    fontFamily: Typography.fontSerif, lineHeight: 26,
-    minHeight: 300, outlineStyle: 'none',
-  },
-
-  footer: {
-    paddingHorizontal: Spacing.md, paddingVertical: Spacing.md,
-    paddingBottom: Platform.OS === 'ios' ? 28 : Spacing.md,
-    borderTopWidth: 1, borderTopColor: Colors.border,
-    backgroundColor: Colors.background,
-  },
-  saveBtn: {
-    backgroundColor: Colors.gold, borderRadius: Radius.md,
-    paddingVertical: 15, alignItems: 'center',
-  },
-  saveBtnText: { fontSize: Typography.sizes.sm, color: Colors.background, fontWeight: '700', letterSpacing: 2 },
-});
-
 // ─── Main Screen ───────────────────────────────────────────────────────────
 export default function StoryResultScreen({ navigation, route }: any) {
   const { genre, format, length, tone, protagonist } = route.params ?? {};
 
-  const [phase,        setPhase]        = useState<'generating' | 'result'>('generating');
-  const [saved,        setSaved]        = useState(false);
-  const [editVisible,  setEditVisible]  = useState(false);
-  const [editedTitle,  setEditedTitle]  = useState('');
-  const [editedBody,   setEditedBody]   = useState('');
+  const [phase,       setPhase]       = useState<'generating' | 'result'>('generating');
+  const [saved,       setSaved]       = useState(false);
+  const [editedTitle, setEditedTitle] = useState('');
+  const [editedBody,  setEditedBody]  = useState('');
 
   const story   = getFallbackStory(genre);
   const isWatch = format === 'watch';
 
-  // Initialise editable content once story loads
+  // Pre-fill editable fields as soon as story is ready
   useEffect(() => {
-    if (phase === 'result' && !editedTitle) {
+    if (phase === 'result') {
       setEditedTitle(story.title);
       setEditedBody(story.body);
     }
   }, [phase]);
 
-  const displayTitle = editedTitle || story.title;
-  const displayBody  = editedBody  || story.body;
-
   const handleSave = () => {
     if (saved) return;
     saveGeneratedStory(
       {
-        title: displayTitle,
+        title: editedTitle || story.title,
         category: genre?.toUpperCase() ?? 'STORY',
-        desc: displayBody.slice(0, 100) + '...',
+        desc: (editedBody || story.body).slice(0, 100) + '...',
         image: story.image,
       },
       isWatch ? 'video' : 'storybook',
     );
     setSaved(true);
-  };
-
-  const handleEditSave = (newTitle: string, newBody: string) => {
-    setEditedTitle(newTitle);
-    setEditedBody(newBody);
-    setSaved(false); // content changed — require re-save
-    setEditVisible(false);
   };
 
   const handleRegenerate = () => {
@@ -439,13 +269,8 @@ export default function StoryResultScreen({ navigation, route }: any) {
     setEditedBody('');
   };
 
-  const handleCreateNew = () => {
-    navigation.navigate('StoryCreate');
-  };
-
-  const handleGoHome = () => {
-    navigation.navigate('Home');
-  };
+  const handleCreateNew = () => navigation.navigate('StoryCreate');
+  const handleGoHome    = () => navigation.navigate('Home');
 
   return (
     <View style={rs.root}>
@@ -470,12 +295,10 @@ export default function StoryResultScreen({ navigation, route }: any) {
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={rs.scroll}>
 
-          {/* Cover image */}
+          {/* Cover image — decorative, no title overlay */}
           <View style={rs.coverWrap}>
             <Image source={{ uri: story.image }} style={rs.cover} resizeMode="cover" />
             <View style={rs.coverGrad} />
-
-            {/* Tags top-left */}
             <View style={rs.tagRow}>
               <View style={[rs.tag, isWatch && rs.tagWatch]}>
                 <Text style={rs.tagText}>{isWatch ? '▶  WATCH' : '◎  READ'}</Text>
@@ -483,55 +306,63 @@ export default function StoryResultScreen({ navigation, route }: any) {
               {length && <View style={rs.tag}><Text style={rs.tagText}>{length.toUpperCase()}</Text></View>}
               {tone   && <View style={rs.tag}><Text style={rs.tagText}>{tone.toUpperCase()}</Text></View>}
             </View>
-
-            {/* Title over image */}
-            <View style={rs.coverContent}>
-              {genre && <Text style={rs.coverGenre}>{genre.toUpperCase()}</Text>}
-              <Text style={rs.coverTitle}>{displayTitle}</Text>
-              {protagonist ? <Text style={rs.coverProt}>feat. {protagonist}</Text> : null}
-            </View>
+            {genre && (
+              <View style={rs.coverGenreWrap}>
+                <Text style={rs.coverGenre}>{genre.toUpperCase()}</Text>
+                {protagonist ? <Text style={rs.coverProt}>feat. {protagonist}</Text> : null}
+              </View>
+            )}
           </View>
 
-          {/* Story body */}
-          <View style={rs.bodyWrap}>
-            {displayBody.split('\n\n').map((para, i) => (
-              <Text key={i} style={rs.para}>{para}</Text>
-            ))}
+          {/* ── Inline editable title ────────────────────────── */}
+          <View style={rs.titleFieldWrap}>
+            <TextInput
+              style={rs.titleField as any}
+              value={editedTitle}
+              onChangeText={t => { setEditedTitle(t); setSaved(false); }}
+              placeholder="Story title..."
+              placeholderTextColor={Colors.textMuted}
+              maxLength={80}
+              returnKeyType="next"
+              multiline
+            />
           </View>
 
-          {/* ── ChatGPT-style action bar ─────────────────────── */}
+          {/* ── Inline editable story body ───────────────────── */}
+          <View style={rs.bodyFieldWrap}>
+            <Text style={rs.bodyFieldHint}>STORY  ·  tap to edit</Text>
+            <TextInput
+              style={rs.bodyField as any}
+              value={editedBody}
+              onChangeText={t => { setEditedBody(t); setSaved(false); }}
+              placeholder="Your story..."
+              placeholderTextColor={Colors.textMuted}
+              multiline
+              textAlignVertical="top"
+              scrollEnabled={false}
+              maxLength={8000}
+            />
+          </View>
+
+          {/* ── Action bar ───────────────────────────────────── */}
           <View style={rs.storyActionBar}>
-            {/* Edit — primary, full width */}
-            <TouchableOpacity
-              style={rs.editStoryBtn}
-              onPress={() => setEditVisible(true)}
-              activeOpacity={0.8}
-            >
-              <Text style={rs.editStoryIcon}>✎</Text>
-              <Text style={rs.editStoryText}>Edit Story</Text>
+            <TouchableOpacity style={rs.iconBtn} onPress={handleRegenerate} activeOpacity={0.7}>
+              <Text style={rs.iconBtnIcon}>↺</Text>
+              <Text style={rs.iconBtnLabel}>Regenerate</Text>
             </TouchableOpacity>
-
-            {/* Divider */}
-            <View style={rs.actionBarDivider} />
-
-            {/* Secondary icon actions */}
-            <View style={rs.actionBarIcons}>
-              <TouchableOpacity style={rs.iconBtn} onPress={handleRegenerate} activeOpacity={0.7}>
-                <Text style={rs.iconBtnIcon}>↺</Text>
-                <Text style={rs.iconBtnLabel}>Regenerate</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={rs.iconBtn} onPress={handleCreateNew} activeOpacity={0.7}>
-                <Text style={rs.iconBtnIcon}>✦</Text>
-                <Text style={rs.iconBtnLabel}>New</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={rs.iconBtn} onPress={handleGoHome} activeOpacity={0.7}>
-                <Text style={rs.iconBtnIcon}>⌂</Text>
-                <Text style={rs.iconBtnLabel}>Home</Text>
-              </TouchableOpacity>
-            </View>
+            <View style={rs.iconDivider} />
+            <TouchableOpacity style={rs.iconBtn} onPress={handleCreateNew} activeOpacity={0.7}>
+              <Text style={rs.iconBtnIcon}>✦</Text>
+              <Text style={rs.iconBtnLabel}>New Story</Text>
+            </TouchableOpacity>
+            <View style={rs.iconDivider} />
+            <TouchableOpacity style={rs.iconBtn} onPress={handleGoHome} activeOpacity={0.7}>
+              <Text style={rs.iconBtnIcon}>⌂</Text>
+              <Text style={rs.iconBtnLabel}>Home</Text>
+            </TouchableOpacity>
           </View>
 
-          {/* Actions */}
+          {/* ── Save ─────────────────────────────────────────── */}
           <View style={rs.actions}>
             <TouchableOpacity
               style={[rs.actionBtn, saved && rs.actionBtnSaved]}
@@ -550,15 +381,6 @@ export default function StoryResultScreen({ navigation, route }: any) {
 
       {/* Bottom nav — always visible so user can jump anywhere */}
       <BottomNav active="create" onNavigate={(s) => navigation.navigate(s)} />
-
-      {/* Edit modal */}
-      <EditModal
-        visible={editVisible}
-        title={displayTitle}
-        body={displayBody}
-        onSave={handleEditSave}
-        onClose={() => setEditVisible(false)}
-      />
     </View>
   );
 }
@@ -606,44 +428,56 @@ const rs = StyleSheet.create({
   },
   tagText: { color: Colors.text, fontSize: 9, letterSpacing: 1.5, fontWeight: '700' },
 
-  coverContent: {
+  coverGenreWrap: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
-    paddingHorizontal: 20, paddingBottom: 20, gap: 4,
+    paddingHorizontal: 20, paddingBottom: 16, gap: 3,
   },
   coverGenre: { color: Colors.gold, fontSize: 10, letterSpacing: 2.5 },
-  coverTitle: { color: Colors.text, fontSize: 26, fontFamily: Typography.fontSerif, lineHeight: 32 },
   coverProt: { color: Colors.textSecondary, fontSize: 12, fontStyle: 'italic' },
 
-  bodyWrap: { paddingHorizontal: 20, paddingTop: 24, gap: 14 },
-  para: { color: Colors.textSecondary, fontSize: 15, lineHeight: 25, fontFamily: Typography.fontSerif },
-
-  // ChatGPT-style action bar below the story
-  storyActionBar: {
+  // Inline editable title
+  titleFieldWrap: {
     marginHorizontal: 20, marginTop: 20,
+    borderBottomWidth: 1, borderBottomColor: Colors.borderGold,
+    paddingBottom: 8,
+  },
+  titleField: {
+    color: Colors.text, fontSize: 24,
+    fontFamily: Typography.fontSerif, lineHeight: 32,
+    outlineStyle: 'none',
+  },
+
+  // Inline editable body
+  bodyFieldWrap: {
+    marginHorizontal: 20, marginTop: 20,
+    borderWidth: 1, borderColor: Colors.border,
+    borderRadius: Radius.md, backgroundColor: Colors.surface,
+    padding: 16,
+  },
+  bodyFieldHint: {
+    fontSize: 10, color: Colors.textMuted,
+    letterSpacing: 2, marginBottom: 12,
+  },
+  bodyField: {
+    color: Colors.textSecondary, fontSize: 15,
+    fontFamily: Typography.fontSerif, lineHeight: 26,
+    outlineStyle: 'none',
+  },
+
+  // Action bar
+  storyActionBar: {
+    flexDirection: 'row',
+    marginHorizontal: 20, marginTop: 16,
     borderRadius: Radius.md,
     borderWidth: 1, borderColor: Colors.border,
     backgroundColor: Colors.surface,
     overflow: 'hidden',
   },
-  editStoryBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 8, paddingVertical: 14,
-    backgroundColor: 'rgba(201,168,76,0.07)',
-  },
-  editStoryIcon: { fontSize: 18, color: Colors.gold },
-  editStoryText: {
-    fontSize: Typography.sizes.md, color: Colors.gold,
-    fontWeight: '700', letterSpacing: 1,
-  },
-  actionBarDivider: { height: 1, backgroundColor: Colors.border },
-  actionBarIcons: {
-    flexDirection: 'row',
-  },
   iconBtn: {
     flex: 1, alignItems: 'center', justifyContent: 'center',
     paddingVertical: 12, gap: 4,
-    borderRightWidth: 1, borderRightColor: Colors.border,
   },
+  iconDivider: { width: 1, backgroundColor: Colors.border },
   iconBtnIcon: { fontSize: 16, color: Colors.textSecondary },
   iconBtnLabel: { fontSize: 10, color: Colors.textMuted, letterSpacing: 1 },
 
