@@ -2,17 +2,21 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   Image, Animated, Platform, StatusBar, Easing,
-  TextInput, KeyboardAvoidingView,
+  TextInput, KeyboardAvoidingView, useWindowDimensions,
 } from 'react-native';
 import { Colors, Typography, Radius, Spacing } from '../theme';
 import { saveGeneratedStory } from '../navigation/AppNavigator';
-import BottomNav from '../components/BottomNav';
 
 // ─── Mock story generator ──────────────────────────────────────────────────
-const MOCK_STORIES: Record<string, { title: string; body: string; image: string }> = {
+const MOCK_STORIES: Record<string, { title: string; body: string; image: string; images: string[] }> = {
   'Dark Fantasy': {
     title: 'The Ashen Crown',
     image: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&q=80',
+      'https://images.unsplash.com/photo-1440778303588-435521a205bc?w=800&q=80',
+      'https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?w=800&q=80',
+    ],
     body: `The crown was forged from the bones of the last true king — everyone knew this, and yet no one dared say it aloud.
 
 She found it in a vault beneath the ruins of Duskhold, buried under seventeen years of ash and silence. The moment her fingers closed around the blackened metal, she felt the weight of every soul it had consumed: a cold, familiar hunger that pressed against the back of her skull like a second mind.
@@ -32,6 +36,11 @@ She had always been a very good liar.`,
   'Mythology': {
     title: 'The God Who Forgot His Name',
     image: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=800&q=80',
+      'https://images.unsplash.com/photo-1555993539-1732b0258235?w=800&q=80',
+      'https://images.unsplash.com/photo-1471874708734-a6d78e2b3647?w=800&q=80',
+    ],
     body: `In the age before rivers had names, there was a god who collected silences.
 
 He walked between the mortal villages at dusk, gathering the quiet that fell between one breath and the next — the pause before a mother calls her child home, the held note after a bell is struck, the moment a flame decides whether to die.
@@ -51,6 +60,11 @@ It was, he later decided, the finest gift he had ever received.`,
   'Sci-Fi': {
     title: 'Signal from Meridian-7',
     image: 'https://images.unsplash.com/photo-1519638399535-1b036603ac77?w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1519638399535-1b036603ac77?w=800&q=80',
+      'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=800&q=80',
+      'https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?w=800&q=80',
+    ],
     body: `The signal arrived at 0347 station-time, three weeks after everyone aboard the Meridian-7 had agreed there was nothing left to find.
 
 It was not a distress call. It was not a beacon. The analyst who caught it in the background noise of a routine survey said it sounded, improbably, like a question.
@@ -70,6 +84,11 @@ Then the stars ahead of them rearranged themselves into a pattern that matched n
   'Noir': {
     title: 'Raining in Intervals',
     image: 'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=800&q=80',
+      'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=800&q=80',
+      'https://images.unsplash.com/photo-1514539079130-25950c84af65?w=800&q=80',
+    ],
     body: `The city rained in intervals, like it was billing by the hour.
 
 Mara Voss came to my office at half-past nine with an envelope and a story that had too many straight lines. In my experience, real trouble comes in curves — it bends around the parts people don't want you to see.
@@ -87,6 +106,11 @@ I didn't judge her. We all need a good alibi for our own silence.`,
   'Historical': {
     title: 'The Last Cartographer',
     image: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=800&q=80',
+      'https://images.unsplash.com/photo-1564502174567-e74e41bde5a4?w=800&q=80',
+      'https://images.unsplash.com/photo-1548610762-b6e89b1a0ec2?w=800&q=80',
+    ],
     body: `The empire sent cartographers ahead of its armies. This was, the generals argued, more civilised than sending armies ahead of cartographers.
 
 Fen Orsa had drawn the edges of four continents and two wars. She had learned to make her maps beautiful because emperors did not hang ugly maps in their throne rooms, and throne rooms were where wars were decided.
@@ -102,6 +126,11 @@ Some places, she had decided, were more useful to the world as rumour than as te
   'Romance': {
     title: 'The Language of Margins',
     image: 'https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?w=800&q=80',
+      'https://images.unsplash.com/photo-1474552226712-ac0f0961a954?w=800&q=80',
+      'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=800&q=80',
+    ],
     body: `She had bought the book secondhand, and it arrived with someone else's entire interior life scrawled in the margins.
 
 The handwriting was angular and impatient — the handwriting, she thought, of someone who read like they were in an argument. Every sentence was underlined or contested or followed by a small, exasperated question mark. The book was about loss, and the margin writer had clearly been losing something specific while they read it.
@@ -125,6 +154,11 @@ He said he'd been hoping someone would ask.`,
   'Horror': {
     title: 'What the House Remembers',
     image: 'https://images.unsplash.com/photo-1504701954957-2010ec3bcec1?w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1504701954957-2010ec3bcec1?w=800&q=80',
+      'https://images.unsplash.com/photo-1509248961158-e54f6934749c?w=800&q=80',
+      'https://images.unsplash.com/photo-1527161153332-99adcc6f2966?w=800&q=80',
+    ],
     body: `The house had been empty for eleven years, and it had spent every one of those years waiting.
 
 The estate agent called it "full of character," which was the industry term for something the seller would rather not explain. The price was low in the way that things are low when no one else will take them.
@@ -146,6 +180,11 @@ Then she called a locksmith, which felt like the most useful form of bravery she
   'Thriller': {
     title: 'The Third Signature',
     image: 'https://images.unsplash.com/photo-1531685250784-7569952593d2?w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1531685250784-7569952593d2?w=800&q=80',
+      'https://images.unsplash.com/photo-1555680202-c86f0e12f086?w=800&q=80',
+      'https://images.unsplash.com/photo-1560807707-8cc77767d783?w=800&q=80',
+    ],
     body: `The document required three signatures, and two of the people who needed to sign it were dead.
 
 Investigator Solen Marsh laid the papers on her desk and worked through the arithmetic of this calmly, the way she'd been trained. Coincidence required approximately three coincidences before it ceased to be coincidence and became a pattern. She was looking at two suspicious deaths and a contract that would transfer controlling interest in a resource network worth eleven figures.
@@ -231,20 +270,24 @@ const gs = StyleSheet.create({
 // ─── Main Screen ───────────────────────────────────────────────────────────
 export default function StoryResultScreen({ navigation, route }: any) {
   const { genre, format, length, tone, protagonist } = route.params ?? {};
+  const { width: SCREEN_W } = useWindowDimensions();
 
-  const [phase,       setPhase]       = useState<'generating' | 'result'>('generating');
-  const [saved,       setSaved]       = useState(false);
-  const [editedTitle, setEditedTitle] = useState('');
-  const [editedBody,  setEditedBody]  = useState('');
+  const [phase,        setPhase]        = useState<'generating' | 'result'>('generating');
+  const [saved,        setSaved]        = useState(false);
+  const [editedTitle,  setEditedTitle]  = useState('');
+  const [editedBody,   setEditedBody]   = useState('');
+  const [carouselIdx,  setCarouselIdx]  = useState(0);
 
   const story   = getFallbackStory(genre);
   const isWatch = format === 'watch';
+  const images  = story.images ?? [story.image];
 
   // Pre-fill editable fields as soon as story is ready
   useEffect(() => {
     if (phase === 'result') {
       setEditedTitle(story.title);
       setEditedBody(story.body);
+      setCarouselIdx(0);
     }
   }, [phase]);
 
@@ -278,10 +321,13 @@ export default function StoryResultScreen({ navigation, route }: any) {
   const handleGoHome    = () => navigation.navigate('Home');
 
   return (
-    <View style={rs.root}>
+    <KeyboardAvoidingView
+      style={rs.root}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       <StatusBar barStyle="light-content" />
 
-      {/* Header */}
+      {/* ── Header ─────────────────────────────────────────── */}
       <View style={rs.header as any}>
         <TouchableOpacity style={rs.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
           <Text style={rs.backArrow}>←</Text>
@@ -289,99 +335,132 @@ export default function StoryResultScreen({ navigation, route }: any) {
         <Text style={rs.headerTitle}>
           {phase === 'generating' ? 'GENERATING...' : 'YOUR STORY'}
         </Text>
-        {/* Home shortcut top-right */}
-        <TouchableOpacity style={rs.backBtn} onPress={handleGoHome} activeOpacity={0.7}>
-          <Text style={rs.homeIcon}>⌂</Text>
-        </TouchableOpacity>
+        <View style={{ width: 40 }} />
       </View>
 
       {phase === 'generating' ? (
         <GeneratingView onDone={() => setPhase('result')} />
       ) : (
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={rs.scroll}>
-
-          {/* Cover image — decorative, no title overlay */}
-          <View style={rs.coverWrap}>
-            <Image source={{ uri: story.image }} style={rs.cover} resizeMode="cover" />
-            <View style={rs.coverGrad} />
-            <View style={rs.tagRow}>
-              <View style={[rs.tag, isWatch && rs.tagWatch]}>
-                <Text style={rs.tagText}>{isWatch ? '▶  WATCH' : '◎  READ'}</Text>
-              </View>
-              {length && <View style={rs.tag}><Text style={rs.tagText}>{length.toUpperCase()}</Text></View>}
-              {tone   && <View style={rs.tag}><Text style={rs.tagText}>{tone.toUpperCase()}</Text></View>}
-            </View>
-            {genre && (
-              <View style={rs.coverGenreWrap}>
-                <Text style={rs.coverGenre}>{genre.toUpperCase()}</Text>
-                {protagonist ? <Text style={rs.coverProt}>feat. {protagonist}</Text> : null}
-              </View>
-            )}
-          </View>
-
-          {/* ── Inline editable title ────────────────────────── */}
-          <View style={rs.titleFieldWrap}>
-            <TextInput
-              style={rs.titleField as any}
-              value={editedTitle}
-              onChangeText={t => { setEditedTitle(t); setSaved(false); }}
-              placeholder="Story title..."
-              placeholderTextColor={Colors.textMuted}
-              maxLength={80}
-              returnKeyType="next"
-              multiline
-            />
-          </View>
-
-          {/* ── Inline editable story body ───────────────────── */}
-          <View style={rs.bodyFieldWrap}>
-            <Text style={rs.bodyFieldHint}>STORY  ·  tap to edit</Text>
-            <TextInput
-              style={rs.bodyField as any}
-              value={editedBody}
-              onChangeText={t => { setEditedBody(t); setSaved(false); }}
-              placeholder="Your story..."
-              placeholderTextColor={Colors.textMuted}
-              multiline
-              textAlignVertical="top"
-              scrollEnabled={false}
-              maxLength={8000}
-            />
-          </View>
-
-          {/* ── Action bar ───────────────────────────────────── */}
-          <View style={rs.storyActionBar}>
-            {hasEdited ? (
-              /* After editing: primary action is Add to Story */
-              <TouchableOpacity
-                style={[rs.iconBtn, rs.iconBtnHighlight]}
-                onPress={handleSave}
-                activeOpacity={0.8}
+        <>
+          {/* ── Scrollable content ─────────────────────────── */}
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={rs.scroll}
+            keyboardShouldPersistTaps="handled"
+          >
+            {/* ── Carousel header ──────────────────────────── */}
+            <View style={[rs.carouselWrap, { width: SCREEN_W }]}>
+              <ScrollView
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                scrollEventThrottle={16}
+                onMomentumScrollEnd={(e) => {
+                  const idx = Math.round(e.nativeEvent.contentOffset.x / SCREEN_W);
+                  setCarouselIdx(idx);
+                }}
+                style={{ width: SCREEN_W, height: 300 }}
               >
-                <Text style={[rs.iconBtnIcon, rs.iconBtnIconGold]}>＋</Text>
-                <Text style={[rs.iconBtnLabel, rs.iconBtnLabelGold]}>Add to Story</Text>
-              </TouchableOpacity>
-            ) : (
-              /* Before editing: offer Regenerate */
-              <TouchableOpacity style={rs.iconBtn} onPress={handleRegenerate} activeOpacity={0.7}>
-                <Text style={rs.iconBtnIcon}>↺</Text>
-                <Text style={rs.iconBtnLabel}>Regenerate</Text>
-              </TouchableOpacity>
-            )}
-            <View style={rs.iconDivider} />
-            <TouchableOpacity style={rs.iconBtn} onPress={handleCreateNew} activeOpacity={0.7}>
-              <Text style={rs.iconBtnIcon}>✦</Text>
-              <Text style={rs.iconBtnLabel}>New Story</Text>
-            </TouchableOpacity>
-            <View style={rs.iconDivider} />
-            <TouchableOpacity style={rs.iconBtn} onPress={handleGoHome} activeOpacity={0.7}>
-              <Text style={rs.iconBtnIcon}>⌂</Text>
-              <Text style={rs.iconBtnLabel}>Home</Text>
-            </TouchableOpacity>
-          </View>
+                {images.map((img, i) => (
+                  <View key={i} style={[rs.slide, { width: SCREEN_W }]}>
+                    <Image source={{ uri: img }} style={rs.cover} resizeMode="cover" />
+                    <View style={rs.coverGrad} />
+                  </View>
+                ))}
+              </ScrollView>
 
-          {/* ── Save to feed (always visible) ────────────────── */}
-          <View style={rs.actions}>
+              {/* Tags — top-left */}
+              <View style={rs.tagRow}>
+                <View style={[rs.tag, isWatch && rs.tagWatch]}>
+                  <Text style={rs.tagText}>{isWatch ? '▶  WATCH' : '◎  READ'}</Text>
+                </View>
+                {length && <View style={rs.tag}><Text style={rs.tagText}>{length.toUpperCase()}</Text></View>}
+                {tone   && <View style={rs.tag}><Text style={rs.tagText}>{tone.toUpperCase()}</Text></View>}
+              </View>
+
+              {/* Genre label — bottom-left */}
+              {genre && (
+                <View style={rs.coverGenreWrap}>
+                  <Text style={rs.coverGenre}>{genre.toUpperCase()}</Text>
+                  {protagonist ? <Text style={rs.coverProt}>feat. {protagonist}</Text> : null}
+                </View>
+              )}
+
+              {/* Dot indicators — bottom-center */}
+              {images.length > 1 && (
+                <View style={rs.dotsRow}>
+                  {images.map((_, i) => (
+                    <View key={i} style={[rs.dot, i === carouselIdx && rs.dotActive]} />
+                  ))}
+                </View>
+              )}
+            </View>
+
+            {/* ── Inline editable title ─────────────────────── */}
+            <View style={rs.titleFieldWrap}>
+              <TextInput
+                style={rs.titleField as any}
+                value={editedTitle}
+                onChangeText={t => { setEditedTitle(t); setSaved(false); }}
+                placeholder="Story title..."
+                placeholderTextColor={Colors.textMuted}
+                maxLength={80}
+                returnKeyType="next"
+                multiline
+              />
+            </View>
+
+            {/* ── Inline editable story body ────────────────── */}
+            <View style={rs.bodyFieldWrap}>
+              <Text style={rs.bodyFieldHint}>STORY  ·  tap to edit</Text>
+              <TextInput
+                style={rs.bodyField as any}
+                value={editedBody}
+                onChangeText={t => { setEditedBody(t); setSaved(false); }}
+                placeholder="Your story..."
+                placeholderTextColor={Colors.textMuted}
+                multiline
+                textAlignVertical="top"
+                scrollEnabled={false}
+                maxLength={8000}
+              />
+            </View>
+
+            <View style={{ height: 24 }} />
+          </ScrollView>
+
+          {/* ── Sticky bottom actions ──────────────────────── */}
+          <View style={rs.stickyBottom as any}>
+            {/* Smart action bar */}
+            <View style={rs.storyActionBar}>
+              {hasEdited ? (
+                <TouchableOpacity
+                  style={[rs.iconBtn, rs.iconBtnHighlight]}
+                  onPress={handleSave}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[rs.iconBtnIcon, rs.iconBtnIconGold]}>＋</Text>
+                  <Text style={[rs.iconBtnLabel, rs.iconBtnLabelGold]}>Add to Story</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity style={rs.iconBtn} onPress={handleRegenerate} activeOpacity={0.7}>
+                  <Text style={rs.iconBtnIcon}>↺</Text>
+                  <Text style={rs.iconBtnLabel}>Regenerate</Text>
+                </TouchableOpacity>
+              )}
+              <View style={rs.iconDivider} />
+              <TouchableOpacity style={rs.iconBtn} onPress={handleCreateNew} activeOpacity={0.7}>
+                <Text style={rs.iconBtnIcon}>✦</Text>
+                <Text style={rs.iconBtnLabel}>New Story</Text>
+              </TouchableOpacity>
+              <View style={rs.iconDivider} />
+              <TouchableOpacity style={rs.iconBtn} onPress={handleGoHome} activeOpacity={0.7}>
+                <Text style={rs.iconBtnIcon}>⌂</Text>
+                <Text style={rs.iconBtnLabel}>Home</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Save to feed CTA */}
             <TouchableOpacity
               style={[rs.actionBtn, saved && rs.actionBtnSaved]}
               onPress={handleSave}
@@ -392,14 +471,9 @@ export default function StoryResultScreen({ navigation, route }: any) {
               </Text>
             </TouchableOpacity>
           </View>
-
-          <View style={{ height: 16 }} />
-        </ScrollView>
+        </>
       )}
-
-      {/* Bottom nav — always visible so user can jump anywhere */}
-      <BottomNav active="create" onNavigate={(s) => navigation.navigate(s)} />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -418,18 +492,19 @@ const rs = StyleSheet.create({
       ? { backdropFilter: 'blur(18px)', backgroundColor: 'rgba(10,10,10,0.85)' }
       : {}),
   },
-  backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  backArrow: { fontSize: 22, color: Colors.gold },
-  homeIcon: { fontSize: 22, color: Colors.textMuted },
-  headerTitle: { fontSize: Typography.sizes.sm, color: Colors.text, letterSpacing: 3, fontWeight: '700' },
+  backBtn:    { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  backArrow:  { fontSize: 22, color: Colors.gold },
+  headerTitle:{ fontSize: Typography.sizes.sm, color: Colors.text, letterSpacing: 3, fontWeight: '700' },
 
-  scroll: { paddingBottom: 24 },
+  scroll: { paddingBottom: 8 },
 
-  coverWrap: { height: 300, position: 'relative' },
-  cover: { width: '100%', height: 300 },
+  // ── Carousel ─────────────────────────────────────────────
+  carouselWrap: { height: 300, position: 'relative', overflow: 'hidden' },
+  slide:        { height: 300, position: 'relative' },
+  cover:        { width: '100%', height: 300 },
   coverGrad: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.22)',
+    backgroundColor: 'rgba(0,0,0,0.28)',
   },
   tagRow: {
     position: 'absolute', top: 14, left: 14,
@@ -447,13 +522,23 @@ const rs = StyleSheet.create({
   tagText: { color: Colors.text, fontSize: 9, letterSpacing: 1.5, fontWeight: '700' },
 
   coverGenreWrap: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    paddingHorizontal: 20, paddingBottom: 16, gap: 3,
+    position: 'absolute', bottom: 28, left: 0, right: 0,
+    paddingHorizontal: 20, gap: 3,
   },
-  coverGenre: { color: Colors.gold, fontSize: 10, letterSpacing: 2.5 },
-  coverProt: { color: Colors.textSecondary, fontSize: 12, fontStyle: 'italic' },
+  coverGenre: { color: Colors.gold, fontSize: 10, letterSpacing: 2.5, fontWeight: '700' },
+  coverProt:  { color: Colors.textSecondary, fontSize: 12, fontStyle: 'italic' },
 
-  // Inline editable title
+  dotsRow: {
+    position: 'absolute', bottom: 10, left: 0, right: 0,
+    flexDirection: 'row', justifyContent: 'center', gap: 6,
+  },
+  dot: {
+    width: 5, height: 5, borderRadius: 3,
+    backgroundColor: 'rgba(255,255,255,0.35)',
+  },
+  dotActive: { backgroundColor: Colors.gold, width: 16 },
+
+  // ── Inline editable title ─────────────────────────────────
   titleFieldWrap: {
     marginHorizontal: 20, marginTop: 20,
     borderBottomWidth: 1, borderBottomColor: Colors.borderGold,
@@ -465,7 +550,7 @@ const rs = StyleSheet.create({
     outlineStyle: 'none',
   },
 
-  // Inline editable body
+  // ── Inline editable body ──────────────────────────────────
   bodyFieldWrap: {
     marginHorizontal: 20, marginTop: 20,
     borderWidth: 1, borderColor: Colors.border,
@@ -479,13 +564,25 @@ const rs = StyleSheet.create({
   bodyField: {
     color: Colors.textSecondary, fontSize: 15,
     fontFamily: Typography.fontSerif, lineHeight: 26,
+    minHeight: 320,
     outlineStyle: 'none',
   },
 
-  // Action bar
+  // ── Sticky bottom bar ─────────────────────────────────────
+  stickyBottom: {
+    borderTopWidth: 1, borderTopColor: Colors.border,
+    backgroundColor: Colors.background,
+    paddingHorizontal: 16, paddingTop: 12,
+    paddingBottom: Platform.OS === 'ios' ? 28 : 16,
+    gap: 10,
+    ...(Platform.OS === 'web'
+      ? { backdropFilter: 'blur(18px)', backgroundColor: 'rgba(10,10,10,0.92)' }
+      : {}),
+  },
+
+  // Action bar (3-up row)
   storyActionBar: {
     flexDirection: 'row',
-    marginHorizontal: 20, marginTop: 16,
     borderRadius: Radius.md,
     borderWidth: 1, borderColor: Colors.border,
     backgroundColor: Colors.surface,
@@ -493,16 +590,16 @@ const rs = StyleSheet.create({
   },
   iconBtn: {
     flex: 1, alignItems: 'center', justifyContent: 'center',
-    paddingVertical: 12, gap: 4,
+    paddingVertical: 13, gap: 4,
   },
   iconBtnHighlight: { backgroundColor: 'rgba(201,168,76,0.1)' },
-  iconDivider: { width: 1, backgroundColor: Colors.border },
-  iconBtnIcon: { fontSize: 16, color: Colors.textSecondary },
-  iconBtnIconGold: { color: Colors.gold },
-  iconBtnLabel: { fontSize: 10, color: Colors.textMuted, letterSpacing: 1 },
+  iconDivider:      { width: 1, backgroundColor: Colors.border },
+  iconBtnIcon:      { fontSize: 16, color: Colors.textSecondary },
+  iconBtnIconGold:  { color: Colors.gold },
+  iconBtnLabel:     { fontSize: 10, color: Colors.textMuted, letterSpacing: 1 },
   iconBtnLabelGold: { color: Colors.gold, fontWeight: '700' },
 
-  actions: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
+  // Save CTA
   actionBtn: {
     backgroundColor: Colors.gold, borderRadius: Radius.md,
     paddingVertical: 15, alignItems: 'center',
@@ -511,6 +608,6 @@ const rs = StyleSheet.create({
     backgroundColor: 'rgba(201,168,76,0.15)',
     borderWidth: 1, borderColor: Colors.gold,
   },
-  actionBtnText: { fontSize: Typography.sizes.sm, color: Colors.background, fontWeight: '700', letterSpacing: 2 },
+  actionBtnText:      { fontSize: Typography.sizes.sm, color: Colors.background, fontWeight: '700', letterSpacing: 2 },
   actionBtnTextSaved: { color: Colors.gold },
 });
