@@ -4,7 +4,6 @@ import {
   TextInput, Modal, Animated, Platform, StatusBar, KeyboardAvoidingView,
 } from 'react-native';
 import { Colors, Typography, Radius, Spacing } from '../theme';
-import BottomNav from '../components/BottomNav';
 
 // ─── Suggestion rows (ChatGPT-style) ──────────────────────────────────────
 const SUGGESTIONS = [
@@ -268,9 +267,6 @@ export default function StoryCreateScreen({ navigation }: any) {
           <Text style={[s.sendBtnText, canGenerate && s.sendBtnTextActive]}>→</Text>
         </TouchableOpacity>
       </View>
-
-      {/* ── Bottom Nav ──────────────────────────────────────── */}
-      <BottomNav active="create" onNavigate={(sc) => navigation.navigate(sc)} />
 
       {/* ── Options sheet ───────────────────────────────────── */}
       <OptionsSheet
