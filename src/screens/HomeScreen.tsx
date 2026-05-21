@@ -270,42 +270,45 @@ export default function HomeScreen({ navigation }: any) {
                 onPress={() => navigation.navigate(screen, { story: item })}
                 activeOpacity={0.9}
               >
-                <Image source={{ uri: item.image }} style={styles.heroImage} resizeMode="cover" />
-                <View style={styles.heroGradient} />
+                {/* ── Image section (fixed height) ── */}
+                <View style={styles.imageWrapper}>
+                  <Image source={{ uri: item.image }} style={styles.heroImage} resizeMode="cover" />
+                  <View style={styles.imageBottomFade} />
 
-                {/* Type tag top-left */}
-                <View style={[styles.typeTag, isWatch && styles.typeTagWatch]}>
-                  <Text style={styles.typeTagText}>{isWatch ? '▶  WATCH' : '◎  READ'}</Text>
-                </View>
-
-                {/* Play button for watch items */}
-                {isWatch && (
-                  <View style={styles.playCircleWrap}>
-                    <View style={styles.playCircle}>
-                      <Text style={styles.playIcon}>▶</Text>
-                    </View>
+                  {/* Type tag top-left */}
+                  <View style={[styles.typeTag, isWatch && styles.typeTagWatch]}>
+                    <Text style={styles.typeTagText}>{isWatch ? '▶  WATCH' : '◎  READ'}</Text>
                   </View>
-                )}
 
-                {/* Like + Share top-right */}
-                <View style={styles.cardActions}>
-                  <TouchableOpacity
-                    style={[styles.actionBtn, isLiked && styles.actionBtnLiked]}
-                    onPress={(e) => { e.stopPropagation?.(); toggleLike(item.id); }}
-                  >
-                    <Text style={[styles.actionIcon, isLiked && styles.actionIconLiked]}>
-                      {isLiked ? '♥' : '♡'}
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.actionBtn}
-                    onPress={(e) => { e.stopPropagation?.(); setShareStory(item); }}
-                  >
-                    <HugeiconsIcon icon={Share02Icon} size={16} color={Colors.text} />
-                  </TouchableOpacity>
+                  {/* Play button — watch only */}
+                  {isWatch && (
+                    <View style={styles.playCircleWrap}>
+                      <View style={styles.playCircle}>
+                        <Text style={styles.playIcon}>▶</Text>
+                      </View>
+                    </View>
+                  )}
+
+                  {/* Like + Share top-right */}
+                  <View style={styles.cardActions}>
+                    <TouchableOpacity
+                      style={[styles.actionBtn, isLiked && styles.actionBtnLiked]}
+                      onPress={(e) => { e.stopPropagation?.(); toggleLike(item.id); }}
+                    >
+                      <Text style={[styles.actionIcon, isLiked && styles.actionIconLiked]}>
+                        {isLiked ? '♥' : '♡'}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.actionBtn}
+                      onPress={(e) => { e.stopPropagation?.(); setShareStory(item); }}
+                    >
+                      <HugeiconsIcon icon={Share02Icon} size={16} color={Colors.text} />
+                    </TouchableOpacity>
+                  </View>
                 </View>
 
-                {/* Content overlay */}
+                {/* ── Content section (natural height) ── */}
                 <View style={styles.heroContent}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Text style={styles.heroCategory}>{item.category}</Text>
@@ -318,8 +321,8 @@ export default function HomeScreen({ navigation }: any) {
                   {item.rating && (
                     <Text style={styles.heroRating}>★ {item.rating}</Text>
                   )}
-                  <Text style={styles.heroTitle} numberOfLines={1}>{item.title}</Text>
-                  <Text style={styles.heroDesc} numberOfLines={2}>{item.desc}</Text>
+                  <Text style={styles.heroTitle}>{item.title}</Text>
+                  <Text style={styles.heroDesc}>{item.desc}</Text>
                   <TouchableOpacity
                     style={styles.continueBtn}
                     onPress={(e) => { e.stopPropagation?.(); navigation.navigate(screen, { story: item }); }}
@@ -429,11 +432,15 @@ const styles = StyleSheet.create({
   heroCard: {
     marginBottom: 16, borderRadius: Radius.md,
     overflow: 'hidden', borderWidth: 1, borderColor: Colors.border,
+    backgroundColor: Colors.surface,
   },
-  heroImage: { width: '100%', height: 280 },
-  heroGradient: {
-    position: 'absolute', top: 140, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.85)',
+
+  // Image section
+  imageWrapper: { position: 'relative', height: 220, overflow: 'hidden' },
+  heroImage: { width: '100%', height: 220 },
+  imageBottomFade: {
+    position: 'absolute', bottom: 0, left: 0, right: 0, height: 48,
+    backgroundColor: 'rgba(0,0,0,0.35)',
   },
   cardActions: {
     position: 'absolute', top: 12, right: 12,
@@ -441,7 +448,7 @@ const styles = StyleSheet.create({
   },
   actionBtn: {
     width: 34, height: 34, borderRadius: 17,
-    backgroundColor: 'rgba(0,0,0,0.38)' as any,
+    backgroundColor: 'rgba(0,0,0,0.42)' as any,
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
     alignItems: 'center', justifyContent: 'center',
     ...(Platform.OS === 'web' ? {
@@ -453,12 +460,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.45)',
     borderColor: Colors.gold,
   },
-  actionIcon: { color: Colors.text, fontSize: 15 },
+  actionIcon:      { color: Colors.text, fontSize: 15 },
   actionIconLiked: { color: Colors.gold, fontSize: 15 },
 
+  // Content section — natural flow, auto height
   heroContent: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    paddingHorizontal: 18, paddingTop: 12, paddingBottom: 18, gap: 4,
+    backgroundColor: Colors.surface,
+    paddingHorizontal: 18, paddingTop: 14, paddingBottom: 18, gap: 5,
   },
   heroCategory: { color: Colors.gold, fontSize: 10, letterSpacing: 2 },
   createdBadge: {
@@ -470,16 +478,16 @@ const styles = StyleSheet.create({
   createdBadgeText: { color: Colors.gold, fontSize: 8, letterSpacing: 1.5, fontWeight: '700' },
   heroTitle: {
     color: Colors.text, fontSize: 18,
-    fontFamily: Typography.fontSerif, lineHeight: 24,
+    fontFamily: Typography.fontSerif, lineHeight: 26,
   },
-  heroDesc: { color: Colors.textSecondary, fontSize: 13, lineHeight: 19 },
-  continueBtn: { alignSelf: 'flex-start', marginTop: 6 },
+  heroDesc: { color: Colors.textSecondary, fontSize: 13, lineHeight: 20 },
+  continueBtn: { alignSelf: 'flex-start', marginTop: 4 },
   continueBtnText: { color: Colors.gold, fontSize: 11, letterSpacing: 2, fontWeight: '700' },
 
-  // Play button — centred on image above gradient
+  // Play button — centred in image area
   playCircleWrap: {
-    position: 'absolute', top: 36, left: 0, right: 0,
-    alignItems: 'center',
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    alignItems: 'center', justifyContent: 'center',
   },
   playCircle: {
     width: 52, height: 52, borderRadius: 26,
