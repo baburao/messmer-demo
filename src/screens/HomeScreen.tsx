@@ -8,7 +8,7 @@ import { Colors, Typography, Radius, Spacing } from '../theme';
 import BottomNav from '../components/BottomNav';
 import { getQuestSetup, getGeneratedStories } from '../navigation/AppNavigator';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { Share02Icon } from '@hugeicons/core-free-icons';
+import { Share02Icon, Search01Icon } from '@hugeicons/core-free-icons';
 
 const READ_STORIES = [
   {
@@ -224,7 +224,15 @@ export default function HomeScreen({ navigation }: any) {
 
       {/* ── Sticky Header ─────────────────────────────────── */}
       <View style={styles.header}>
+        <View style={{ width: 40 }} />
         <Text style={styles.headerTitle}>MESSMER</Text>
+        <TouchableOpacity
+          style={styles.headerSearchBtn}
+          onPress={() => navigation.navigate('Search')}
+          activeOpacity={0.7}
+        >
+          <HugeiconsIcon icon={Search01Icon} size={20} color={Colors.gold} />
+        </TouchableOpacity>
       </View>
 
       {/* ── Feed Filters ──────────────────────────────────── */}
@@ -369,6 +377,10 @@ const styles = StyleSheet.create({
     flex: 1, textAlign: 'center',
     color: Colors.gold, fontSize: 18,
     fontFamily: Typography.fontSerif, letterSpacing: 6,
+  },
+  headerSearchBtn: {
+    width: 40, height: 40,
+    alignItems: 'center', justifyContent: 'center',
   },
 
   scrollWrapper: { flex: 1, flexBasis: 0, overflow: 'hidden' as any },
