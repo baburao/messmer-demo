@@ -117,6 +117,7 @@ export default function StoryDetailScreen({ navigation, route }: any) {
       {/* ── Full-screen paging scroll ── */}
       <ScrollView
         pagingEnabled
+        disableIntervalMomentum
         showsVerticalScrollIndicator={false}
         snapToInterval={H}
         decelerationRate="fast"
@@ -127,7 +128,13 @@ export default function StoryDetailScreen({ navigation, route }: any) {
         overScrollMode="never"
       >
         {quests.map((quest) => (
-          <View key={quest.id} style={{ width: W, height: H }}>
+          <View
+            key={quest.id}
+            style={[
+              { width: W, height: H },
+              Platform.OS === 'web' && ({ scrollSnapStop: 'always' } as any),
+            ]}
+          >
             {/* Full-bleed background */}
             <Image
               source={{ uri: quest.image }}

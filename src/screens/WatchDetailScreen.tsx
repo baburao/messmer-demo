@@ -137,6 +137,7 @@ export default function WatchDetailScreen({ navigation, route }: any) {
       {/* ── Full-screen paging scroll ── */}
       <ScrollView
         pagingEnabled
+        disableIntervalMomentum
         showsVerticalScrollIndicator={false}
         snapToInterval={H}
         decelerationRate="fast"
@@ -147,7 +148,13 @@ export default function WatchDetailScreen({ navigation, route }: any) {
         overScrollMode="never"
       >
         {episodes.map((ep) => (
-          <View key={ep.id} style={{ width: W, height: H }}>
+          <View
+            key={ep.id}
+            style={[
+              { width: W, height: H },
+              Platform.OS === 'web' && ({ scrollSnapStop: 'always' } as any),
+            ]}
+          >
             {/* Full-bleed background */}
             <Image
               source={{ uri: ep.image }}
