@@ -4,7 +4,7 @@ import {
   StyleSheet, Image, StatusBar, Modal, Animated, Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { Colors, Typography, Radius } from '../theme';
+import { Colors, Typography, Radius, Spacing } from '../theme';
 import BottomNav from '../components/BottomNav';
 import { getQuestSetup, getGeneratedStories } from '../navigation/AppNavigator';
 import { HugeiconsIcon } from '@hugeicons/react';
@@ -12,22 +12,22 @@ import { Share02Icon } from '@hugeicons/core-free-icons';
 
 const READ_STORIES = [
   {
-    id: '1', type: 'read',
-    category: 'CULTURE / WEAVING',
+    id: '1', type: 'read', recommended: true,
+    category: 'CULTURE / WEAVING', rating: 4.7,
     title: 'Shadows in the Loom: The New Noir',
     desc: 'Exploring the intersection of ancestral craftsmanship and the brutalist city...',
     image: 'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=800&q=80',
   },
   {
-    id: '2', type: 'read',
-    category: 'FICTION / DARK',
+    id: '2', type: 'read', recommended: true,
+    category: 'FICTION / DARK', rating: 4.9,
     title: 'The Architecture of Silent Echoes',
     desc: 'A labyrinthine journey through memory and forgotten spaces. Every choice reshapes...',
     image: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&q=80',
   },
   {
-    id: '3', type: 'read',
-    category: 'MYTHOLOGY / EPIC',
+    id: '3', type: 'read', recommended: false,
+    category: 'MYTHOLOGY / EPIC', rating: 4.5,
     title: 'Edge of the Known',
     desc: 'Ancient maps end here. What lies beyond is yours to discover and define...',
     image: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=800&q=80',
@@ -36,19 +36,26 @@ const READ_STORIES = [
 
 const WATCH_STORIES = [
   {
-    id: 'w1', type: 'watch',
-    category: 'HISTORY / EPIC',
+    id: 'w1', type: 'watch', recommended: true,
+    category: 'HISTORY / EPIC', rating: 4.8,
     title: 'Lost Myths of the Aurelian Empire',
     desc: 'Uncovering the forgotten age of stone and fire, where gods walked among mortals...',
     image: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=800&q=80',
   },
   {
-    id: 'w2', type: 'watch',
-    category: 'SCI-FI / VISUAL',
+    id: 'w2', type: 'watch', recommended: false,
+    category: 'SCI-FI / VISUAL', rating: 4.6,
     title: 'Neon Pasts & Electric Futures',
     desc: 'A weekly visual essay where cyberpunk aesthetics collide with ancient prophecy...',
     image: 'https://images.unsplash.com/photo-1519638399535-1b036603ac77?w=800&q=80',
   },
+];
+
+const FEED_FILTERS = [
+  { id: 'all',         label: 'ALL'         },
+  { id: 'recommended', label: 'RECOMMENDED' },
+  { id: 'read',        label: 'READ'        },
+  { id: 'watch',       label: 'WATCH'       },
 ];
 
 // ─── Share sheet contacts ──────────────────────────────────────────────────
@@ -168,6 +175,7 @@ export default function HomeScreen({ navigation }: any) {
   const [likedStories, setLikedStories] = useState<Set<string>>(new Set());
   const [shareStory, setShareStory] = useState<any | null>(null);
   const [generatedStories, setGeneratedStories] = useState<any[]>([]);
+  const [activeFilter, setActiveFilter] = useState<'all' | 'recommended' | 'read' | 'watch'>('all');
 
   // Reload generated stories every time this screen is focused
   useFocusEffect(
@@ -180,8 +188,16 @@ export default function HomeScreen({ navigation }: any) {
   const genWithType = generatedStories.map(s => ({
     ...s,
     type: s.format === 'video' ? 'watch' : 'read',
+    rating: (4.5 + Math.random() * 0.5).toFixed(1),
+    recommended: true,
   }));
-  const feedList = [...genWithType, ...READ_STORIES, ...WATCH_STORIES];
+  const allFeed = [...genWithType, ...READ_STORIES, ...WATCH_STORIES];
+
+  const feedList = activeFilter === 'all'
+    ? allFeed
+    : activeFilter === 'recommended'
+    ? allFeed.filter(s => s.recommended)
+    : allFeed.filter(s => s.type === activeFilter);
 
   const toggleLike = (id: string) => {
     setLikedStories(prev => {
@@ -209,6 +225,31 @@ export default function HomeScreen({ navigation }: any) {
       {/* ── Sticky Header ─────────────────────────────────── */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>MESSMER</Text>
+      </View>
+
+      {/* ── Feed Filters ──────────────────────────────────── */}
+      <View style={styles.filterBar as any}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterRow}
+        >
+          {FEED_FILTERS.map(f => {
+            const active = activeFilter === f.id;
+            return (
+              <TouchableOpacity
+                key={f.id}
+                style={[styles.filterPill, active && styles.filterPillActive]}
+                onPress={() => setActiveFilter(f.id as any)}
+                activeOpacity={0.75}
+              >
+                <Text style={[styles.filterPillText, active && styles.filterPillTextActive]}>
+                  {f.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
       </View>
 
       {/* ── Unified Feed ──────────────────────────────────── */}
@@ -274,6 +315,9 @@ export default function HomeScreen({ navigation }: any) {
                       </View>
                     )}
                   </View>
+                  {item.rating && (
+                    <Text style={styles.heroRating}>★ {item.rating}</Text>
+                  )}
                   <Text style={styles.heroTitle} numberOfLines={1}>{item.title}</Text>
                   <Text style={styles.heroDesc} numberOfLines={2}>{item.desc}</Text>
                   <TouchableOpacity
@@ -327,6 +371,40 @@ const styles = StyleSheet.create({
   scrollWrapper: { flex: 1, flexBasis: 0, overflow: 'hidden' as any },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 16, paddingTop: 12 },
+
+  // Feed filter bar
+  filterBar: {
+    borderBottomWidth: 1, borderBottomColor: 'rgba(42,42,42,0.5)',
+    backgroundColor: 'rgba(10,10,10,0.82)',
+    ...(Platform.OS === 'web' ? {
+      backdropFilter: 'blur(18px)',
+      WebkitBackdropFilter: 'blur(18px)',
+    } : {}),
+  } as any,
+  filterRow: {
+    paddingHorizontal: 16, paddingVertical: 10, gap: 8, flexDirection: 'row',
+  },
+  filterPill: {
+    paddingHorizontal: 14, paddingVertical: 6,
+    borderRadius: Radius.full,
+    borderWidth: 1, borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+  },
+  filterPillActive: {
+    borderColor: Colors.gold,
+    backgroundColor: 'rgba(201,168,76,0.12)',
+  },
+  filterPillText: {
+    fontSize: 10, color: Colors.textSecondary,
+    fontWeight: '700', letterSpacing: 1.5,
+  },
+  filterPillTextActive: { color: Colors.gold },
+
+  // Star rating
+  heroRating: {
+    fontSize: 11, color: Colors.gold,
+    fontWeight: '700', letterSpacing: 0.5, marginBottom: 2,
+  },
 
   typeTag: {
     position: 'absolute', top: 12, left: 12, zIndex: 10,

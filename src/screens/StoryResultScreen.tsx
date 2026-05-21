@@ -378,10 +378,14 @@ export default function StoryResultScreen({ navigation, route }: any) {
                 {tone   && <View style={rs.tag}><Text style={rs.tagText}>{tone.toUpperCase()}</Text></View>}
               </View>
 
-              {/* Genre label — bottom-left */}
+              {/* Genre + rating — bottom-left */}
               {genre && (
                 <View style={rs.coverGenreWrap}>
                   <Text style={rs.coverGenre}>{genre.toUpperCase()}</Text>
+                  <View style={rs.ratingRow}>
+                    <Text style={rs.ratingStars}>★★★★★</Text>
+                    <Text style={rs.ratingValue}>4.8</Text>
+                  </View>
                   {protagonist ? <Text style={rs.coverProt}>feat. {protagonist}</Text> : null}
                 </View>
               )}
@@ -460,14 +464,14 @@ export default function StoryResultScreen({ navigation, route }: any) {
               </TouchableOpacity>
             </View>
 
-            {/* Save to feed CTA */}
+            {/* Save to My Profile CTA */}
             <TouchableOpacity
               style={[rs.actionBtn, saved && rs.actionBtnSaved]}
               onPress={handleSave}
               activeOpacity={0.85}
             >
               <Text style={[rs.actionBtnText, saved && rs.actionBtnTextSaved]}>
-                {saved ? '✓  SAVED TO FEED' : '＋  SAVE TO FEED'}
+                {saved ? '✓  SAVED TO MY PROFILE' : '★  SAVE TO MY PROFILE'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -525,8 +529,11 @@ const rs = StyleSheet.create({
     position: 'absolute', bottom: 28, left: 0, right: 0,
     paddingHorizontal: 20, gap: 3,
   },
-  coverGenre: { color: Colors.gold, fontSize: 10, letterSpacing: 2.5, fontWeight: '700' },
-  coverProt:  { color: Colors.textSecondary, fontSize: 12, fontStyle: 'italic' },
+  coverGenre:  { color: Colors.gold, fontSize: 10, letterSpacing: 2.5, fontWeight: '700' },
+  coverProt:   { color: Colors.textSecondary, fontSize: 12, fontStyle: 'italic' },
+  ratingRow:   { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 },
+  ratingStars: { fontSize: 12, color: Colors.gold, letterSpacing: 1 },
+  ratingValue: { fontSize: 12, color: Colors.gold, fontWeight: '700' },
 
   dotsRow: {
     position: 'absolute', bottom: 10, left: 0, right: 0,
