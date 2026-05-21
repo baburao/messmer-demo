@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   Image, Modal, Platform, StatusBar, useWindowDimensions,
@@ -74,35 +74,16 @@ function ShareSheet({ onClose }: { onClose: () => void }) {
 
 // ─── Main Screen ──────────────────────────────────────────────────────────
 export default function StoryDetailScreen({ navigation, route }: any) {
-  const story      = route?.params?.story;
-  const fromCreate = route?.params?.fromCreate === true;
-  const choices    = route?.params?.choices ?? [];
+  const story = route?.params?.story;
 
   const { width: W, height: H } = useWindowDimensions();
 
-  // Layout constants
-  const BANNER_H  = Math.round(H * 0.28);   // compact story header ~28% screen
-  const CARD_H    = Math.round(H * 0.75);   // each quest card = 75% of screen
-  const CARD_GAP  = 10;
+  const [likedIds,  setLikedIds]  = useState<Set<string>>(new Set());
+  const [shareOpen, setShareOpen] = useState(false);
 
-  const [likedIds,   setLikedIds]   = useState<Set<string>>(new Set());
-  const [shareOpen,  setShareOpen]  = useState(false);
-
-  const image    = story?.image    || 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&q=80';
   const title    = story?.title    || 'The Architecture of Silent Echoes';
-  const desc     = story?.desc     || 'A labyrinthine journey through memory and forgotten spaces.';
   const category = story?.category || 'FICTION / DARK';
-
   const quests: Quest[] = STORY_QUESTS[story?.id] || STORY_QUESTS.default;
-
-  // Snap to: 0 (banner view), then one offset per quest card
-  const snapOffsets = useMemo(() => {
-    const arr: number[] = [0];
-    for (let i = 0; i < quests.length; i++) {
-      arr.push(BANNER_H + i * (CARD_H + CARD_GAP));
-    }
-    return arr;
-  }, [BANNER_H, CARD_H, CARD_GAP, quests.length]);
 
   const toggleLike = (id: string) =>
     setLikedIds(prev => {
@@ -111,74 +92,46 @@ export default function StoryDetailScreen({ navigation, route }: any) {
       return n;
     });
 
+  const TOP_INSET = Platform.OS === 'android'
+    ? (StatusBar.currentHeight ?? 24) + 8
+    : 52;
+
   return (
-    <View style={[s.root, { width: W }]}>
+    <View style={{ flex: 1, backgroundColor: '#000' }}>
       <StatusBar barStyle="light-content" />
 
-      {/* ── Floating back button — always visible ── */}
-      <TouchableOpacity
-        style={s.backBtn as any}
-        onPress={() => navigation.goBack()}
-        activeOpacity={0.8}
-      >
-        <Text style={s.backIcon}>←</Text>
-      </TouchableOpacity>
-
+      {/* ── Full-screen paging scroll ── */}
       <ScrollView
-        style={s.scroll}
+        pagingEnabled
         showsVerticalScrollIndicator={false}
-        snapToOffsets={snapOffsets}
+        style={{ width: W, height: H }}
+        contentContainerStyle={{ width: W }}
+        scrollEventThrottle={16}
         decelerationRate="fast"
-        snapToAlignment="start"
       >
-        {/* ── Story Banner ────────────────────────────────────── */}
-        <View style={[s.banner, { height: BANNER_H }]}>
-          <Image source={{ uri: image }} style={s.bannerImg} resizeMode="cover" />
-          <View style={s.bannerOverlay} />
-          <View style={s.bannerContent}>
-            <Text style={s.bannerCategory}>{category}</Text>
-            <Text style={s.bannerTitle} numberOfLines={2}>{title}</Text>
-            <Text style={s.bannerDesc} numberOfLines={2}>{desc}</Text>
-            <View style={s.bannerRow}>
-              <View style={s.typeBadge}>
-                <Text style={s.typeBadgeText}>◎  READ</Text>
-              </View>
-              <Text style={s.questCountText}>{quests.length} QUESTS</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* ── Quest Cards — Shorts style ───────────────────────── */}
         {quests.map((quest, idx) => {
           const isLiked = likedIds.has(quest.id);
           return (
-            <View
-              key={quest.id}
-              style={[
-                s.card,
-                {
-                  height: CARD_H,
-                  width: W,
-                  marginTop: idx === 0 ? 0 : CARD_GAP,
-                },
-              ]}
-            >
-              {/* Full-bleed background image */}
-              <Image source={{ uri: quest.image }} style={s.cardImg} resizeMode="cover" />
+            <View key={quest.id} style={{ width: W, height: H }}>
+              {/* Full-bleed background */}
+              <Image
+                source={{ uri: quest.image }}
+                style={StyleSheet.absoluteFillObject}
+                resizeMode="cover"
+              />
 
-              {/* Top cinematic vignette */}
-              <View style={s.cardFadeTop} />
-              {/* Bottom cinematic vignette */}
-              <View style={s.cardFadeBottom} />
+              {/* Top vignette */}
+              <View style={s.fadeTop} />
+              {/* Bottom vignette */}
+              <View style={s.fadeBottom} />
 
-              {/* Quest number badge — top left */}
-              <View style={s.questBadge}>
+              {/* Quest number badge */}
+              <View style={[s.questBadge, { top: TOP_INSET + 56 }]}>
                 <Text style={s.questBadgeText}>QUEST {quest.number}</Text>
               </View>
 
-              {/* ── Right-side action column (YouTube Shorts style) ── */}
-              <View style={s.sideBar}>
-                {/* Like */}
+              {/* ── Right-side icon column ── */}
+              <View style={[s.sideBar, { bottom: 160 }]}>
                 <TouchableOpacity
                   style={s.sideItem}
                   onPress={() => toggleLike(quest.id)}
@@ -194,7 +147,6 @@ export default function StoryDetailScreen({ navigation, route }: any) {
                   </Text>
                 </TouchableOpacity>
 
-                {/* Share */}
                 <TouchableOpacity
                   style={s.sideItem}
                   onPress={() => setShareOpen(true)}
@@ -206,7 +158,6 @@ export default function StoryDetailScreen({ navigation, route }: any) {
                   <Text style={s.sideLabel}>Share</Text>
                 </TouchableOpacity>
 
-                {/* Rating */}
                 <View style={s.sideItem}>
                   <View style={s.sideCircle}>
                     <Text style={s.sideRatingStar}>★</Text>
@@ -214,7 +165,6 @@ export default function StoryDetailScreen({ navigation, route }: any) {
                   <Text style={[s.sideLabel, s.sideLabelGold]}>{quest.rating}</Text>
                 </View>
 
-                {/* Edit */}
                 <TouchableOpacity
                   style={s.sideItem}
                   onPress={() =>
@@ -233,8 +183,8 @@ export default function StoryDetailScreen({ navigation, route }: any) {
                 </TouchableOpacity>
               </View>
 
-              {/* ── Bottom-left: title + description + CTA ── */}
-              <View style={[s.cardContent, { maxWidth: W - 96 }]}>
+              {/* ── Bottom-left: title + desc + CTA ── */}
+              <View style={[s.cardContent, { bottom: 36, maxWidth: W - 90 }]}>
                 <Text style={s.cardTitle}>{quest.title}</Text>
                 <Text style={s.cardDesc} numberOfLines={3}>{quest.desc}</Text>
                 <TouchableOpacity
@@ -253,9 +203,22 @@ export default function StoryDetailScreen({ navigation, route }: any) {
             </View>
           );
         })}
-
-        <View style={{ height: 60 }} />
       </ScrollView>
+
+      {/* ── Fixed top bar: back + story title ── */}
+      <View style={[s.topBar, { paddingTop: TOP_INSET }] as any} pointerEvents="box-none">
+        <TouchableOpacity
+          style={s.backBtn}
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.8}
+        >
+          <Text style={s.backIcon}>←</Text>
+        </TouchableOpacity>
+
+        <Text style={s.topTitle} numberOfLines={1}>{title}</Text>
+
+        <View style={{ width: 40 }} />
+      </View>
 
       {shareOpen && <ShareSheet onClose={() => setShareOpen(false)} />}
     </View>
@@ -264,76 +227,60 @@ export default function StoryDetailScreen({ navigation, route }: any) {
 
 // ─── Styles ───────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.background },
-  scroll: { flex: 1 },
-
-  // Floating back button
-  backBtn: {
+  // Fixed top bar (overlays the scroll)
+  topBar: {
     position: 'absolute',
-    top: Platform.OS === 'android' ? (StatusBar.currentHeight ?? 0) + 12 : 52,
-    left: 16,
-    zIndex: 300,
+    top: 0, left: 0, right: 0,
+    zIndex: 400,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingBottom: 14,
+    gap: 8,
+    backgroundColor: 'rgba(0,0,0,0)',
+    ...(Platform.OS === 'web' ? {
+      background: 'linear-gradient(to bottom, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0) 100%)',
+    } : {}),
+  } as any,
+
+  backBtn: {
     width: 40, height: 40, borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.52)',
+    backgroundColor: 'rgba(0,0,0,0.45)',
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)',
     alignItems: 'center', justifyContent: 'center',
     ...(Platform.OS === 'web' ? {
-      backdropFilter: 'blur(12px)',
-      WebkitBackdropFilter: 'blur(12px)',
+      backdropFilter: 'blur(10px)',
+      WebkitBackdropFilter: 'blur(10px)',
     } : {}),
   } as any,
   backIcon: { color: Colors.text, fontSize: 18 },
 
-  // ── Story Banner ──────────────────────────────────────────────────────
-  banner: { position: 'relative', overflow: 'hidden' },
-  bannerImg: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    width: '100%', height: '100%',
-  },
-  bannerOverlay: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.68)',
-  },
-  bannerContent: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    paddingHorizontal: 20, paddingBottom: 18, paddingTop: 60, gap: 4,
-  },
-  bannerCategory:  { color: Colors.gold, fontSize: 9, letterSpacing: 2.5, fontWeight: '700' },
-  bannerTitle: {
-    color: Colors.text, fontSize: 20,
-    fontFamily: Typography.fontSerif, lineHeight: 26,
-  },
-  bannerDesc:    { color: 'rgba(255,255,255,0.6)', fontSize: 12, lineHeight: 18 },
-  bannerRow:     { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 },
-  typeBadge: {
-    paddingHorizontal: 8, paddingVertical: 3,
-    borderRadius: 4,
-    backgroundColor: 'rgba(201,168,76,0.18)',
-    borderWidth: 1, borderColor: 'rgba(201,168,76,0.5)',
-  },
-  typeBadgeText:  { color: Colors.gold, fontSize: 9, letterSpacing: 1.5, fontWeight: '700' },
-  questCountText: { color: 'rgba(255,255,255,0.5)', fontSize: 10, letterSpacing: 1 },
-
-  // ── Quest Card ────────────────────────────────────────────────────────
-  card: { position: 'relative', overflow: 'hidden', backgroundColor: '#000' },
-  cardImg: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    width: '100%', height: '100%',
+  topTitle: {
+    flex: 1, textAlign: 'center',
+    color: Colors.text,
+    fontSize: Typography.sizes.sm,
+    fontFamily: Typography.fontSerif,
+    letterSpacing: 1.5,
+    fontWeight: '600',
   },
 
-  // Cinematic vignettes — top and bottom darkening
-  cardFadeTop: {
-    position: 'absolute', top: 0, left: 0, right: 0, height: 140,
-    backgroundColor: 'rgba(0,0,0,0.50)',
+  // Cinematic vignettes
+  fadeTop: {
+    ...StyleSheet.absoluteFillObject,
+    bottom: undefined,
+    height: 180,
+    backgroundColor: 'rgba(0,0,0,0.55)',
   },
-  cardFadeBottom: {
-    position: 'absolute', bottom: 0, left: 0, right: 0, height: 300,
-    backgroundColor: 'rgba(0,0,0,0.78)',
+  fadeBottom: {
+    ...StyleSheet.absoluteFillObject,
+    top: undefined,
+    height: 340,
+    backgroundColor: 'rgba(0,0,0,0.80)',
   },
 
-  // Quest badge — top left
+  // Quest badge
   questBadge: {
-    position: 'absolute', top: 20, left: 70, zIndex: 10,
+    position: 'absolute', left: 20, zIndex: 10,
     paddingHorizontal: 10, paddingVertical: 4,
     borderRadius: 4,
     backgroundColor: 'rgba(201,168,76,0.15)',
@@ -341,98 +288,83 @@ const s = StyleSheet.create({
   },
   questBadgeText: { color: Colors.gold, fontSize: 9, letterSpacing: 2.5, fontWeight: '700' },
 
-  // ── Right-side icon column ─────────────────────────────────────────────
+  // Right-side icons
   sideBar: {
     position: 'absolute',
     right: 14,
-    bottom: 130,
     zIndex: 10,
     alignItems: 'center',
-    gap: 22,
+    gap: 24,
   },
   sideItem:  { alignItems: 'center', gap: 5 },
   sideCircle: {
-    width: 46, height: 46, borderRadius: 23,
-    backgroundColor: 'rgba(0,0,0,0.40)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)',
+    width: 48, height: 48, borderRadius: 24,
+    backgroundColor: 'rgba(0,0,0,0.42)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center', justifyContent: 'center',
     ...(Platform.OS === 'web' ? {
-      backdropFilter: 'blur(8px)',
-      WebkitBackdropFilter: 'blur(8px)',
+      backdropFilter: 'blur(10px)',
+      WebkitBackdropFilter: 'blur(10px)',
     } : {}),
   } as any,
-  sideCircleActive: {
-    borderColor: Colors.gold,
-    backgroundColor: 'rgba(201,168,76,0.15)',
-  },
-  sideIconText:  { fontSize: 20, color: Colors.text },
-  sideIconGold:  { color: Colors.gold },
-  sideRatingStar:{ fontSize: 18, color: Colors.gold },
-  sideLabel:     { fontSize: 10, color: 'rgba(255,255,255,0.75)', letterSpacing: 0.5 },
-  sideLabelGold: { color: Colors.gold, fontWeight: '700' },
+  sideCircleActive: { borderColor: Colors.gold, backgroundColor: 'rgba(201,168,76,0.18)' },
+  sideIconText:     { fontSize: 20, color: Colors.text },
+  sideIconGold:     { color: Colors.gold },
+  sideRatingStar:   { fontSize: 18, color: Colors.gold },
+  sideLabel:        { fontSize: 10, color: 'rgba(255,255,255,0.78)', letterSpacing: 0.3 },
+  sideLabelGold:    { color: Colors.gold, fontWeight: '700' },
 
-  // ── Bottom-left content ────────────────────────────────────────────────
+  // Bottom-left content
   cardContent: {
     position: 'absolute',
-    bottom: 0, left: 0,
-    paddingHorizontal: 20,
-    paddingBottom: 24,
-    paddingTop: 20,
-    gap: 6,
+    left: 20,
     zIndex: 10,
+    gap: 6,
   },
   cardTitle: {
     color: Colors.text,
-    fontSize: 22,
+    fontSize: 24,
     fontFamily: Typography.fontSerif,
-    lineHeight: 28,
+    lineHeight: 30,
     fontWeight: '600',
   },
   cardDesc: {
     color: 'rgba(255,255,255,0.72)',
     fontSize: 13,
-    lineHeight: 19,
+    lineHeight: 20,
   },
   ctaBtn: {
-    marginTop: 10,
+    marginTop: 12,
     alignSelf: 'flex-start',
     backgroundColor: Colors.gold,
-    paddingHorizontal: 20,
-    paddingVertical: 11,
+    paddingHorizontal: 22, paddingVertical: 12,
     borderRadius: Radius.full,
   },
   ctaBtnText: {
     color: Colors.background,
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 2,
+    fontSize: 11, fontWeight: '700', letterSpacing: 2,
   },
 });
 
-// ─── Share sheet styles ────────────────────────────────────────────────────
+// ─── Share sheet ───────────────────────────────────────────────────────────
 const ss = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' },
+  backdrop:  { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' },
   sheet: {
     backgroundColor: '#1A1710',
     borderTopLeftRadius: 20, borderTopRightRadius: 20,
     borderTopWidth: 1, borderColor: Colors.border,
     paddingBottom: 36,
   },
-  handle: {
-    width: 36, height: 4, borderRadius: 2,
-    backgroundColor: Colors.border,
-    alignSelf: 'center', marginTop: 12, marginBottom: 16,
-  },
-  row:        { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 20, paddingVertical: 14 },
-  rowBorder:  { borderBottomWidth: 1, borderBottomColor: Colors.border },
-  optIcon:    { fontSize: 18, width: 26, textAlign: 'center' },
-  optLabel:   { color: Colors.text, fontSize: 15 },
+  handle:    { width: 36, height: 4, borderRadius: 2, backgroundColor: Colors.border, alignSelf: 'center', marginTop: 12, marginBottom: 16 },
+  row:       { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 20, paddingVertical: 14 },
+  rowBorder: { borderBottomWidth: 1, borderBottomColor: Colors.border },
+  optIcon:   { fontSize: 18, width: 26, textAlign: 'center' },
+  optLabel:  { color: Colors.text, fontSize: 15 },
   done: {
     marginHorizontal: 20, marginTop: 12,
     backgroundColor: Colors.surface,
     borderRadius: Radius.md, paddingVertical: 14,
-    alignItems: 'center',
-    borderWidth: 1, borderColor: Colors.border,
+    alignItems: 'center', borderWidth: 1, borderColor: Colors.border,
   },
   doneText: { color: Colors.gold, fontSize: 15, fontWeight: '600' },
 });

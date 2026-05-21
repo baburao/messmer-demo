@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   Image, Modal, Platform, StatusBar, useWindowDimensions,
@@ -94,32 +94,16 @@ function ShareSheet({ onClose }: { onClose: () => void }) {
 
 // ─── Main Screen ──────────────────────────────────────────────────────────
 export default function WatchDetailScreen({ navigation, route }: any) {
-  const story      = route?.params?.story;
-  const fromCreate = route?.params?.fromCreate === true;
+  const story = route?.params?.story;
 
   const { width: W, height: H } = useWindowDimensions();
-
-  const BANNER_H = Math.round(H * 0.28);
-  const CARD_H   = Math.round(H * 0.75);
-  const CARD_GAP = 10;
 
   const [likedIds,  setLikedIds]  = useState<Set<string>>(new Set());
   const [shareOpen, setShareOpen] = useState(false);
 
-  const image    = story?.image    || 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=800&q=80';
   const title    = story?.title    || 'Lost Myths of the Aurelian Empire';
-  const desc     = story?.desc     || 'Uncovering the forgotten age of stone and fire, where gods walked among mortals.';
   const category = story?.category || 'HISTORY / EPIC';
-
   const episodes: Episode[] = WATCH_EPISODES[story?.id] || WATCH_EPISODES.w1;
-
-  const snapOffsets = useMemo(() => {
-    const arr: number[] = [0];
-    for (let i = 0; i < episodes.length; i++) {
-      arr.push(BANNER_H + i * (CARD_H + CARD_GAP));
-    }
-    return arr;
-  }, [BANNER_H, CARD_H, CARD_GAP, episodes.length]);
 
   const toggleLike = (id: string) =>
     setLikedIds(prev => {
@@ -128,83 +112,58 @@ export default function WatchDetailScreen({ navigation, route }: any) {
       return n;
     });
 
+  const TOP_INSET = Platform.OS === 'android'
+    ? (StatusBar.currentHeight ?? 24) + 8
+    : 52;
+
   return (
-    <View style={[s.root, { width: W }]}>
+    <View style={{ flex: 1, backgroundColor: '#000' }}>
       <StatusBar barStyle="light-content" />
 
-      {/* ── Floating back button ── */}
-      <TouchableOpacity
-        style={s.backBtn as any}
-        onPress={() => navigation.goBack()}
-        activeOpacity={0.8}
-      >
-        <Text style={s.backIcon}>←</Text>
-      </TouchableOpacity>
-
+      {/* ── Full-screen paging scroll ── */}
       <ScrollView
-        style={s.scroll}
+        pagingEnabled
         showsVerticalScrollIndicator={false}
-        snapToOffsets={snapOffsets}
+        style={{ width: W, height: H }}
+        contentContainerStyle={{ width: W }}
+        scrollEventThrottle={16}
         decelerationRate="fast"
-        snapToAlignment="start"
       >
-        {/* ── Story Banner ──────────────────────────────────── */}
-        <View style={[s.banner, { height: BANNER_H }]}>
-          <Image source={{ uri: image }} style={s.bannerImg} resizeMode="cover" />
-          <View style={s.bannerOverlay} />
-          <View style={s.bannerContent}>
-            <Text style={s.bannerCategory}>{category}</Text>
-            <Text style={s.bannerTitle} numberOfLines={2}>{title}</Text>
-            <Text style={s.bannerDesc} numberOfLines={2}>{desc}</Text>
-            <View style={s.bannerRow}>
-              <View style={s.typeBadge}>
-                <Text style={s.typeBadgeText}>▶  WATCH</Text>
-              </View>
-              <Text style={s.epCountText}>{episodes.length} PARTS</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* ── Episode Cards — Shorts style ─────────────────── */}
-        {episodes.map((ep, idx) => {
+        {episodes.map((ep) => {
           const isLiked = likedIds.has(ep.id);
           return (
-            <View
-              key={ep.id}
-              style={[
-                s.card,
-                {
-                  height: CARD_H,
-                  width: W,
-                  marginTop: idx === 0 ? 0 : CARD_GAP,
-                },
-              ]}
-            >
-              {/* Background poster */}
-              <Image source={{ uri: ep.image }} style={s.cardImg} resizeMode="cover" />
-              <View style={s.cardFadeTop} />
-              <View style={s.cardFadeBottom} />
+            <View key={ep.id} style={{ width: W, height: H }}>
+              {/* Full-bleed background */}
+              <Image
+                source={{ uri: ep.image }}
+                style={StyleSheet.absoluteFillObject}
+                resizeMode="cover"
+              />
 
-              {/* Part badge — top left */}
-              <View style={s.partBadge}>
+              {/* Top vignette */}
+              <View style={s.fadeTop} />
+              {/* Bottom vignette */}
+              <View style={s.fadeBottom} />
+
+              {/* Part badge — top left (below top bar) */}
+              <View style={[s.partBadge, { top: TOP_INSET + 56 }]}>
                 <Text style={s.partBadgeText}>PART {ep.number}</Text>
               </View>
 
-              {/* Duration badge — top right */}
-              <View style={s.durationBadge}>
+              {/* Duration badge — top right (below top bar) */}
+              <View style={[s.durationBadge, { top: TOP_INSET + 56 }]}>
                 <Text style={s.durationText}>{ep.duration}</Text>
               </View>
 
-              {/* Play button — centre */}
+              {/* Centre play button */}
               <View style={s.playWrap} pointerEvents="none">
                 <View style={s.playCircle}>
                   <Text style={s.playIcon}>▶</Text>
                 </View>
               </View>
 
-              {/* ── Right-side action column ── */}
-              <View style={s.sideBar}>
-                {/* Like */}
+              {/* ── Right-side icon column ── */}
+              <View style={[s.sideBar, { bottom: 160 }]}>
                 <TouchableOpacity
                   style={s.sideItem}
                   onPress={() => toggleLike(ep.id)}
@@ -220,7 +179,6 @@ export default function WatchDetailScreen({ navigation, route }: any) {
                   </Text>
                 </TouchableOpacity>
 
-                {/* Share */}
                 <TouchableOpacity
                   style={s.sideItem}
                   onPress={() => setShareOpen(true)}
@@ -232,7 +190,6 @@ export default function WatchDetailScreen({ navigation, route }: any) {
                   <Text style={s.sideLabel}>Share</Text>
                 </TouchableOpacity>
 
-                {/* Rating */}
                 <View style={s.sideItem}>
                   <View style={s.sideCircle}>
                     <Text style={s.sideRatingStar}>★</Text>
@@ -240,7 +197,6 @@ export default function WatchDetailScreen({ navigation, route }: any) {
                   <Text style={[s.sideLabel, s.sideLabelGold]}>{ep.rating}</Text>
                 </View>
 
-                {/* Edit */}
                 <TouchableOpacity
                   style={s.sideItem}
                   onPress={() =>
@@ -260,7 +216,7 @@ export default function WatchDetailScreen({ navigation, route }: any) {
               </View>
 
               {/* ── Bottom-left: title + desc + CTA ── */}
-              <View style={[s.cardContent, { maxWidth: W - 96 }]}>
+              <View style={[s.cardContent, { bottom: 36, maxWidth: W - 90 }]}>
                 <Text style={s.cardTitle}>{ep.title}</Text>
                 <Text style={s.cardDesc} numberOfLines={3}>{ep.desc}</Text>
                 <TouchableOpacity
@@ -279,9 +235,22 @@ export default function WatchDetailScreen({ navigation, route }: any) {
             </View>
           );
         })}
-
-        <View style={{ height: 60 }} />
       </ScrollView>
+
+      {/* ── Fixed top bar: back + story title ── */}
+      <View style={[s.topBar, { paddingTop: TOP_INSET }] as any} pointerEvents="box-none">
+        <TouchableOpacity
+          style={s.backBtn}
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.8}
+        >
+          <Text style={s.backIcon}>←</Text>
+        </TouchableOpacity>
+
+        <Text style={s.topTitle} numberOfLines={1}>{title}</Text>
+
+        <View style={{ width: 40 }} />
+      </View>
 
       {shareOpen && <ShareSheet onClose={() => setShareOpen(false)} />}
     </View>
@@ -290,81 +259,72 @@ export default function WatchDetailScreen({ navigation, route }: any) {
 
 // ─── Styles ───────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  root:   { flex: 1, backgroundColor: Colors.background },
-  scroll: { flex: 1 },
-
-  // Floating back button
-  backBtn: {
+  // Fixed top bar (overlays the scroll)
+  topBar: {
     position: 'absolute',
-    top: Platform.OS === 'android' ? (StatusBar.currentHeight ?? 0) + 12 : 52,
-    left: 16,
-    zIndex: 300,
+    top: 0, left: 0, right: 0,
+    zIndex: 400,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingBottom: 14,
+    gap: 8,
+    backgroundColor: 'rgba(0,0,0,0)',
+    ...(Platform.OS === 'web' ? {
+      background: 'linear-gradient(to bottom, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0) 100%)',
+    } : {}),
+  } as any,
+
+  backBtn: {
     width: 40, height: 40, borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.52)',
+    backgroundColor: 'rgba(0,0,0,0.45)',
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)',
     alignItems: 'center', justifyContent: 'center',
     ...(Platform.OS === 'web' ? {
-      backdropFilter: 'blur(12px)',
-      WebkitBackdropFilter: 'blur(12px)',
+      backdropFilter: 'blur(10px)',
+      WebkitBackdropFilter: 'blur(10px)',
     } : {}),
   } as any,
   backIcon: { color: Colors.text, fontSize: 18 },
 
-  // ── Story Banner ──────────────────────────────────────────────────────
-  banner:  { position: 'relative', overflow: 'hidden' },
-  bannerImg: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    width: '100%', height: '100%',
+  topTitle: {
+    flex: 1, textAlign: 'center',
+    color: Colors.text,
+    fontSize: Typography.sizes.sm,
+    fontFamily: Typography.fontSerif,
+    letterSpacing: 1.5,
+    fontWeight: '600',
   },
-  bannerOverlay: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.68)',
-  },
-  bannerContent: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    paddingHorizontal: 20, paddingBottom: 18, paddingTop: 60, gap: 4,
-  },
-  bannerCategory:  { color: Colors.gold, fontSize: 9, letterSpacing: 2.5, fontWeight: '700' },
-  bannerTitle: {
-    color: Colors.text, fontSize: 20,
-    fontFamily: Typography.fontSerif, lineHeight: 26,
-  },
-  bannerDesc:   { color: 'rgba(255,255,255,0.6)', fontSize: 12, lineHeight: 18 },
-  bannerRow:    { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 },
-  typeBadge: {
-    paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4,
-    backgroundColor: 'rgba(80,120,255,0.18)',
-    borderWidth: 1, borderColor: 'rgba(80,120,255,0.5)',
-  },
-  typeBadgeText: { color: '#7090FF', fontSize: 9, letterSpacing: 1.5, fontWeight: '700' },
-  epCountText:   { color: 'rgba(255,255,255,0.5)', fontSize: 10, letterSpacing: 1 },
 
-  // ── Episode Card ──────────────────────────────────────────────────────
-  card:    { position: 'relative', overflow: 'hidden', backgroundColor: '#000' },
-  cardImg: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    width: '100%', height: '100%',
+  // Cinematic vignettes
+  fadeTop: {
+    ...StyleSheet.absoluteFillObject,
+    bottom: undefined,
+    height: 180,
+    backgroundColor: 'rgba(0,0,0,0.55)',
   },
-  cardFadeTop: {
-    position: 'absolute', top: 0, left: 0, right: 0, height: 150,
-    backgroundColor: 'rgba(0,0,0,0.52)',
-  },
-  cardFadeBottom: {
-    position: 'absolute', bottom: 0, left: 0, right: 0, height: 300,
+  fadeBottom: {
+    ...StyleSheet.absoluteFillObject,
+    top: undefined,
+    height: 340,
     backgroundColor: 'rgba(0,0,0,0.80)',
   },
 
-  // Badges
+  // Part badge (blue)
   partBadge: {
-    position: 'absolute', top: 20, left: 70, zIndex: 10,
-    paddingHorizontal: 10, paddingVertical: 4, borderRadius: 4,
+    position: 'absolute', left: 20, zIndex: 10,
+    paddingHorizontal: 10, paddingVertical: 4,
+    borderRadius: 4,
     backgroundColor: 'rgba(80,120,255,0.15)',
     borderWidth: 1, borderColor: 'rgba(80,120,255,0.5)',
   },
   partBadgeText: { color: '#7090FF', fontSize: 9, letterSpacing: 2.5, fontWeight: '700' },
+
+  // Duration badge (top right)
   durationBadge: {
-    position: 'absolute', top: 20, right: 16, zIndex: 10,
-    paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4,
+    position: 'absolute', right: 16, zIndex: 10,
+    paddingHorizontal: 8, paddingVertical: 4,
+    borderRadius: 4,
     backgroundColor: 'rgba(0,0,0,0.65)',
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
   },
@@ -372,69 +332,73 @@ const s = StyleSheet.create({
 
   // Centre play button
   playWrap: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    alignItems: 'center', justifyContent: 'center', zIndex: 5,
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center', justifyContent: 'center',
+    zIndex: 5,
   },
   playCircle: {
-    width: 64, height: 64, borderRadius: 32,
+    width: 68, height: 68, borderRadius: 34,
     backgroundColor: 'rgba(255,255,255,0.14)',
     borderWidth: 2, borderColor: 'rgba(255,255,255,0.45)',
     alignItems: 'center', justifyContent: 'center',
   },
-  playIcon: { color: Colors.text, fontSize: 22, marginLeft: 4 },
+  playIcon: { color: Colors.text, fontSize: 24, marginLeft: 5 },
 
-  // ── Right-side icon column ─────────────────────────────────────────────
+  // Right-side icons
   sideBar: {
     position: 'absolute',
-    right: 14, bottom: 130,
+    right: 14,
     zIndex: 10,
     alignItems: 'center',
-    gap: 22,
+    gap: 24,
   },
-  sideItem: { alignItems: 'center', gap: 5 },
+  sideItem:  { alignItems: 'center', gap: 5 },
   sideCircle: {
-    width: 46, height: 46, borderRadius: 23,
-    backgroundColor: 'rgba(0,0,0,0.40)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)',
+    width: 48, height: 48, borderRadius: 24,
+    backgroundColor: 'rgba(0,0,0,0.42)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center', justifyContent: 'center',
     ...(Platform.OS === 'web' ? {
-      backdropFilter: 'blur(8px)',
-      WebkitBackdropFilter: 'blur(8px)',
+      backdropFilter: 'blur(10px)',
+      WebkitBackdropFilter: 'blur(10px)',
     } : {}),
   } as any,
-  sideCircleActive: {
-    borderColor: Colors.gold,
-    backgroundColor: 'rgba(201,168,76,0.15)',
-  },
-  sideIconText:   { fontSize: 20, color: Colors.text },
-  sideIconGold:   { color: Colors.gold },
-  sideRatingStar: { fontSize: 18, color: Colors.gold },
-  sideLabel:      { fontSize: 10, color: 'rgba(255,255,255,0.75)', letterSpacing: 0.5 },
-  sideLabelGold:  { color: Colors.gold, fontWeight: '700' },
+  sideCircleActive: { borderColor: Colors.gold, backgroundColor: 'rgba(201,168,76,0.18)' },
+  sideIconText:     { fontSize: 20, color: Colors.text },
+  sideIconGold:     { color: Colors.gold },
+  sideRatingStar:   { fontSize: 18, color: Colors.gold },
+  sideLabel:        { fontSize: 10, color: 'rgba(255,255,255,0.78)', letterSpacing: 0.3 },
+  sideLabelGold:    { color: Colors.gold, fontWeight: '700' },
 
-  // ── Bottom-left content ────────────────────────────────────────────────
+  // Bottom-left content
   cardContent: {
     position: 'absolute',
-    bottom: 0, left: 0,
-    paddingHorizontal: 20,
-    paddingBottom: 24, paddingTop: 20,
-    gap: 6, zIndex: 10,
+    left: 20,
+    zIndex: 10,
+    gap: 6,
   },
   cardTitle: {
-    color: Colors.text, fontSize: 22,
-    fontFamily: Typography.fontSerif, lineHeight: 28, fontWeight: '600',
+    color: Colors.text,
+    fontSize: 24,
+    fontFamily: Typography.fontSerif,
+    lineHeight: 30,
+    fontWeight: '600',
   },
-  cardDesc: { color: 'rgba(255,255,255,0.72)', fontSize: 13, lineHeight: 19 },
+  cardDesc: {
+    color: 'rgba(255,255,255,0.72)',
+    fontSize: 13,
+    lineHeight: 20,
+  },
   ctaBtn: {
-    marginTop: 10,
+    marginTop: 12,
     alignSelf: 'flex-start',
-    backgroundColor: Colors.gold,
-    paddingHorizontal: 20, paddingVertical: 11,
+    backgroundColor: '#5078FF',
+    paddingHorizontal: 22, paddingVertical: 12,
     borderRadius: Radius.full,
   },
   ctaBtnText: {
-    color: Colors.background, fontSize: 11,
-    fontWeight: '700', letterSpacing: 2,
+    color: Colors.text,
+    fontSize: 11, fontWeight: '700', letterSpacing: 2,
   },
 });
 
@@ -456,8 +420,7 @@ const ss = StyleSheet.create({
     marginHorizontal: 20, marginTop: 12,
     backgroundColor: Colors.surface,
     borderRadius: Radius.md, paddingVertical: 14,
-    alignItems: 'center',
-    borderWidth: 1, borderColor: Colors.border,
+    alignItems: 'center', borderWidth: 1, borderColor: Colors.border,
   },
   doneText: { color: Colors.gold, fontSize: 15, fontWeight: '600' },
 });
