@@ -72,25 +72,39 @@ function ShareSheet({ onClose }: { onClose: () => void }) {
   );
 }
 
+// ─── Gradient vignette (platform-aware) ──────────────────────────────────
+function Vignette() {
+  if (Platform.OS === 'web') {
+    return (
+      <View
+        style={[StyleSheet.absoluteFillObject, s.vignetteWeb] as any}
+        // @ts-ignore
+        pointerEvents="none"
+      />
+    );
+  }
+  return (
+    <>
+      <View style={s.fadeTop} />
+      <View style={s.fadeMid} />
+      <View style={s.fadeBottom} />
+    </>
+  );
+}
+
 // ─── Main Screen ──────────────────────────────────────────────────────────
 export default function StoryDetailScreen({ navigation, route }: any) {
   const story = route?.params?.story;
 
   const { width: W, height: H } = useWindowDimensions();
 
-  const [likedIds,  setLikedIds]  = useState<Set<string>>(new Set());
+  // Story-level actions (not per-quest)
+  const [liked,     setLiked]     = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const storyRating = '4.8';
 
-  const title    = story?.title    || 'The Architecture of Silent Echoes';
-  const category = story?.category || 'FICTION / DARK';
+  const title  = story?.title  || 'The Architecture of Silent Echoes';
   const quests: Quest[] = STORY_QUESTS[story?.id] || STORY_QUESTS.default;
-
-  const toggleLike = (id: string) =>
-    setLikedIds(prev => {
-      const n = new Set(prev);
-      n.has(id) ? n.delete(id) : n.add(id);
-      return n;
-    });
 
   const TOP_INSET = Platform.OS === 'android'
     ? (StatusBar.currentHeight ?? 24) + 8
@@ -104,105 +118,55 @@ export default function StoryDetailScreen({ navigation, route }: any) {
       <ScrollView
         pagingEnabled
         showsVerticalScrollIndicator={false}
+        snapToInterval={H}
+        decelerationRate="fast"
         style={{ width: W, height: H }}
         contentContainerStyle={{ width: W }}
         scrollEventThrottle={16}
-        decelerationRate="fast"
+        bounces
+        overScrollMode="never"
       >
-        {quests.map((quest, idx) => {
-          const isLiked = likedIds.has(quest.id);
-          return (
-            <View key={quest.id} style={{ width: W, height: H }}>
-              {/* Full-bleed background */}
-              <Image
-                source={{ uri: quest.image }}
-                style={StyleSheet.absoluteFillObject}
-                resizeMode="cover"
-              />
+        {quests.map((quest) => (
+          <View key={quest.id} style={{ width: W, height: H }}>
+            {/* Full-bleed background */}
+            <Image
+              source={{ uri: quest.image }}
+              style={StyleSheet.absoluteFillObject}
+              resizeMode="cover"
+            />
 
-              {/* Top vignette */}
-              <View style={s.fadeTop} />
-              {/* Bottom vignette */}
-              <View style={s.fadeBottom} />
+            {/* Gradient vignette */}
+            <Vignette />
 
-              {/* Quest number badge */}
-              <View style={[s.questBadge, { top: TOP_INSET + 56 }]}>
+            {/* ── Bottom-left: quest number + title + desc ── */}
+            <View style={[s.cardContent, { bottom: 48, maxWidth: W - 90 }]}>
+              {/* Quest badge moved to bottom */}
+              <View style={s.questBadge}>
                 <Text style={s.questBadgeText}>QUEST {quest.number}</Text>
               </View>
-
-              {/* ── Right-side icon column ── */}
-              <View style={[s.sideBar, { bottom: 160 }]}>
-                <TouchableOpacity
-                  style={s.sideItem}
-                  onPress={() => toggleLike(quest.id)}
-                  activeOpacity={0.8}
-                >
-                  <View style={[s.sideCircle, isLiked && s.sideCircleActive]}>
-                    <Text style={[s.sideIconText, isLiked && s.sideIconGold]}>
-                      {isLiked ? '♥' : '♡'}
-                    </Text>
-                  </View>
-                  <Text style={[s.sideLabel, isLiked && s.sideLabelGold]}>
-                    {isLiked ? 'Liked' : 'Like'}
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={s.sideItem}
-                  onPress={() => setShareOpen(true)}
-                  activeOpacity={0.8}
-                >
-                  <View style={s.sideCircle}>
-                    <HugeiconsIcon icon={Share02Icon} size={20} color={Colors.text} />
-                  </View>
-                  <Text style={s.sideLabel}>Share</Text>
-                </TouchableOpacity>
-
-                <View style={s.sideItem}>
-                  <View style={s.sideCircle}>
-                    <Text style={s.sideRatingStar}>★</Text>
-                  </View>
-                  <Text style={[s.sideLabel, s.sideLabelGold]}>{quest.rating}</Text>
-                </View>
-
-                <TouchableOpacity
-                  style={s.sideItem}
-                  onPress={() =>
-                    navigation.navigate('StoryExperience', {
-                      themeId: story?.id || 'dark',
-                      questId: quest.id,
-                      editMode: true,
-                    })
-                  }
-                  activeOpacity={0.8}
-                >
-                  <View style={s.sideCircle}>
-                    <Text style={s.sideIconText}>✎</Text>
-                  </View>
-                  <Text style={s.sideLabel}>Edit</Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* ── Bottom-left: title + desc + CTA ── */}
-              <View style={[s.cardContent, { bottom: 36, maxWidth: W - 90 }]}>
-                <Text style={s.cardTitle}>{quest.title}</Text>
-                <Text style={s.cardDesc} numberOfLines={3}>{quest.desc}</Text>
-                <TouchableOpacity
-                  style={s.ctaBtn}
-                  onPress={() =>
-                    navigation.navigate('StoryExperience', {
-                      themeId: story?.id || 'dark',
-                      questId: quest.id,
-                    })
-                  }
-                  activeOpacity={0.85}
-                >
-                  <Text style={s.ctaBtnText}>START QUEST  →</Text>
-                </TouchableOpacity>
-              </View>
+              <Text style={s.cardTitle}>{quest.title}</Text>
+              <Text style={s.cardDesc} numberOfLines={3}>{quest.desc}</Text>
             </View>
-          );
-        })}
+
+            {/* ── Per-quest Edit button (bottom-right) ── */}
+            <TouchableOpacity
+              style={[s.editBtn, { bottom: 48 }]}
+              onPress={() =>
+                navigation.navigate('StoryExperience', {
+                  themeId: story?.id || 'dark',
+                  questId: quest.id,
+                  editMode: true,
+                })
+              }
+              activeOpacity={0.8}
+            >
+              <View style={s.sideCircle}>
+                <Text style={s.sideIconText}>✎</Text>
+              </View>
+              <Text style={s.sideLabel}>Edit</Text>
+            </TouchableOpacity>
+          </View>
+        ))}
       </ScrollView>
 
       {/* ── Fixed top bar: back + story title ── */}
@@ -220,6 +184,47 @@ export default function StoryDetailScreen({ navigation, route }: any) {
         <View style={{ width: 40 }} />
       </View>
 
+      {/* ── Story-level action sidebar (Like / Share / Rating) ── */}
+      <View style={[s.fixedSideBar, { top: TOP_INSET + 80 }]} pointerEvents="box-none">
+        {/* Like */}
+        <TouchableOpacity
+          style={s.sideItem}
+          onPress={() => setLiked(v => !v)}
+          activeOpacity={0.8}
+          pointerEvents="auto"
+        >
+          <View style={[s.sideCircle, liked && s.sideCircleActive]}>
+            <Text style={[s.sideIconText, liked && s.sideIconGold]}>
+              {liked ? '♥' : '♡'}
+            </Text>
+          </View>
+          <Text style={[s.sideLabel, liked && s.sideLabelGold]}>
+            {liked ? 'Liked' : 'Like'}
+          </Text>
+        </TouchableOpacity>
+
+        {/* Share */}
+        <TouchableOpacity
+          style={s.sideItem}
+          onPress={() => setShareOpen(true)}
+          activeOpacity={0.8}
+          pointerEvents="auto"
+        >
+          <View style={s.sideCircle}>
+            <HugeiconsIcon icon={Share02Icon} size={20} color={Colors.text} />
+          </View>
+          <Text style={s.sideLabel}>Share</Text>
+        </TouchableOpacity>
+
+        {/* Rating */}
+        <View style={s.sideItem}>
+          <View style={s.sideCircle}>
+            <Text style={s.sideRatingStar}>★</Text>
+          </View>
+          <Text style={[s.sideLabel, s.sideLabelGold]}>{storyRating}</Text>
+        </View>
+      </View>
+
       {shareOpen && <ShareSheet onClose={() => setShareOpen(false)} />}
     </View>
   );
@@ -227,7 +232,7 @@ export default function StoryDetailScreen({ navigation, route }: any) {
 
 // ─── Styles ───────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  // Fixed top bar (overlays the scroll)
+  // Fixed top bar
   topBar: {
     position: 'absolute',
     top: 0, left: 0, right: 0,
@@ -237,16 +242,15 @@ const s = StyleSheet.create({
     paddingHorizontal: 12,
     paddingBottom: 14,
     gap: 8,
-    backgroundColor: 'rgba(0,0,0,0)',
     ...(Platform.OS === 'web' ? {
-      background: 'linear-gradient(to bottom, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0) 100%)',
-    } : {}),
+      background: 'linear-gradient(to bottom, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0) 100%)',
+    } : { backgroundColor: 'transparent' }),
   } as any,
 
   backBtn: {
     width: 40, height: 40, borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: 'rgba(0,0,0,0.38)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
     alignItems: 'center', justifyContent: 'center',
     ...(Platform.OS === 'web' ? {
       backdropFilter: 'blur(10px)',
@@ -264,38 +268,65 @@ const s = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Cinematic vignettes
-  fadeTop: {
-    ...StyleSheet.absoluteFillObject,
-    bottom: undefined,
-    height: 180,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-  },
-  fadeBottom: {
-    ...StyleSheet.absoluteFillObject,
-    top: undefined,
-    height: 340,
-    backgroundColor: 'rgba(0,0,0,0.80)',
+  // Story-level fixed sidebar (right side, upper area)
+  fixedSideBar: {
+    position: 'absolute',
+    right: 14,
+    zIndex: 400,
+    alignItems: 'center',
+    gap: 24,
   },
 
-  // Quest badge
-  questBadge: {
-    position: 'absolute', left: 20, zIndex: 10,
-    paddingHorizontal: 10, paddingVertical: 4,
-    borderRadius: 4,
-    backgroundColor: 'rgba(201,168,76,0.15)',
-    borderWidth: 1, borderColor: 'rgba(201,168,76,0.6)',
-  },
-  questBadgeText: { color: Colors.gold, fontSize: 9, letterSpacing: 2.5, fontWeight: '700' },
-
-  // Right-side icons
-  sideBar: {
+  // Per-quest Edit button (bottom-right of each card)
+  editBtn: {
     position: 'absolute',
     right: 14,
     zIndex: 10,
     alignItems: 'center',
-    gap: 24,
+    gap: 5,
   },
+
+  // Gradient vignette — web uses CSS gradient
+  vignetteWeb: {
+    zIndex: 2,
+    // @ts-ignore
+    background: 'linear-gradient(to bottom, rgba(0,0,0,0.60) 0%, rgba(0,0,0,0.05) 35%, rgba(0,0,0,0.05) 55%, rgba(0,0,0,0.82) 100%)',
+  },
+
+  // Native vignette fallback — three stacked fade zones
+  fadeTop: {
+    ...StyleSheet.absoluteFillObject,
+    bottom: undefined,
+    height: 200,
+    // Simulate fade with transparent-to-dark
+    backgroundColor: 'rgba(0,0,0,0.52)',
+    zIndex: 2,
+  },
+  fadeMid: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.08)',
+    zIndex: 1,
+  },
+  fadeBottom: {
+    ...StyleSheet.absoluteFillObject,
+    top: undefined,
+    height: 360,
+    backgroundColor: 'rgba(0,0,0,0.78)',
+    zIndex: 2,
+  },
+
+  // Quest badge (now at bottom, inside cardContent)
+  questBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10, paddingVertical: 4,
+    borderRadius: 4,
+    backgroundColor: 'rgba(201,168,76,0.15)',
+    borderWidth: 1, borderColor: 'rgba(201,168,76,0.6)',
+    marginBottom: 6,
+  },
+  questBadgeText: { color: Colors.gold, fontSize: 9, letterSpacing: 2.5, fontWeight: '700' },
+
+  // Shared icon styles
   sideItem:  { alignItems: 'center', gap: 5 },
   sideCircle: {
     width: 48, height: 48, borderRadius: 24,
@@ -319,7 +350,7 @@ const s = StyleSheet.create({
     position: 'absolute',
     left: 20,
     zIndex: 10,
-    gap: 6,
+    gap: 4,
   },
   cardTitle: {
     color: Colors.text,
@@ -332,17 +363,7 @@ const s = StyleSheet.create({
     color: 'rgba(255,255,255,0.72)',
     fontSize: 13,
     lineHeight: 20,
-  },
-  ctaBtn: {
-    marginTop: 12,
-    alignSelf: 'flex-start',
-    backgroundColor: Colors.gold,
-    paddingHorizontal: 22, paddingVertical: 12,
-    borderRadius: Radius.full,
-  },
-  ctaBtnText: {
-    color: Colors.background,
-    fontSize: 11, fontWeight: '700', letterSpacing: 2,
+    marginTop: 2,
   },
 });
 
