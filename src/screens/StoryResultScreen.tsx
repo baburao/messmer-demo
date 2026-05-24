@@ -479,91 +479,84 @@ export default function StoryResultScreen({ navigation, route }: any) {
         <GeneratingView onDone={() => setPhase('result')} />
       ) : (
         <>
-          {/* ── Scrollable content ── */}
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={rs.scroll}
-            keyboardShouldPersistTaps="handled"
-          >
-            {/* ── Full-screen hero image with title overlaid ── */}
-            <View style={[rs.heroWrap, { width: SCREEN_W, height: SCREEN_H }]}>
-              {/* Horizontal image carousel */}
-              <ScrollView
-                horizontal pagingEnabled
-                disableIntervalMomentum
-                showsHorizontalScrollIndicator={false}
-                scrollEventThrottle={16}
-                onMomentumScrollEnd={(e) => {
-                  setCarouselIdx(Math.round(e.nativeEvent.contentOffset.x / SCREEN_W));
-                }}
-                style={StyleSheet.absoluteFillObject}
-              >
-                {images.map((img, i) => (
-                  <View key={i} style={{ width: SCREEN_W, height: SCREEN_H }}>
-                    <Image source={{ uri: img }} style={StyleSheet.absoluteFillObject} resizeMode="cover" />
-                  </View>
-                ))}
-              </ScrollView>
-
-              {/* Gradient vignette */}
-              <View style={rs.heroVignette as any} pointerEvents="none" />
-
-              {/* Tags — top-left */}
-              <View style={rs.tagRow}>
-                <View style={[rs.tag, isWatch && rs.tagWatch]}>
-                  <Text style={rs.tagText}>{isWatch ? '▶  WATCH' : '◎  READ'}</Text>
+          {/* ── Full-screen canvas (image + all overlays) ── */}
+          <View style={rs.canvas}>
+            {/* Background image carousel */}
+            <ScrollView
+              horizontal pagingEnabled
+              disableIntervalMomentum
+              showsHorizontalScrollIndicator={false}
+              scrollEventThrottle={16}
+              onMomentumScrollEnd={(e) => {
+                setCarouselIdx(Math.round(e.nativeEvent.contentOffset.x / SCREEN_W));
+              }}
+              style={StyleSheet.absoluteFillObject}
+            >
+              {images.map((img, i) => (
+                <View key={i} style={{ width: SCREEN_W, flex: 1 }}>
+                  <Image source={{ uri: img }} style={StyleSheet.absoluteFillObject} resizeMode="cover" />
                 </View>
-                {length && <View style={rs.tag}><Text style={rs.tagText}>{length.toUpperCase()}</Text></View>}
-                {tone   && <View style={rs.tag}><Text style={rs.tagText}>{tone.toUpperCase()}</Text></View>}
-              </View>
+              ))}
+            </ScrollView>
 
-              {/* Editable title — top, overlaid on image */}
-              <View style={rs.heroTitleWrap}>
-                <TextInput
-                  style={rs.heroTitleField as any}
-                  value={editedTitle}
-                  onChangeText={t => { setEditedTitle(t); setSaved(false); }}
-                  placeholder="Story title..."
-                  placeholderTextColor="rgba(255,255,255,0.4)"
-                  maxLength={80}
-                  returnKeyType="next"
-                  multiline
-                />
-                {genre && <Text style={rs.heroGenre}>{genre.toUpperCase()}</Text>}
-                {protagonist ? <Text style={rs.heroProt}>feat. {protagonist}</Text> : null}
-              </View>
+            {/* Gradient vignette */}
+            <View style={rs.heroVignette as any} pointerEvents="none" />
 
-              {/* Dots + scroll hint — bottom */}
-              <View style={rs.heroBottom} pointerEvents="none">
-                {images.length > 1 && (
-                  <View style={rs.dotsRow}>
-                    {images.map((_, i) => (
-                      <View key={i} style={[rs.dot, i === carouselIdx && rs.dotActive]} />
-                    ))}
-                  </View>
-                )}
-                <Text style={rs.scrollHint}>↓  scroll to read</Text>
+            {/* Tags — top-left */}
+            <View style={rs.tagRow}>
+              <View style={[rs.tag, isWatch && rs.tagWatch]}>
+                <Text style={rs.tagText}>{isWatch ? '▶  WATCH' : '◎  READ'}</Text>
               </View>
+              {length && <View style={rs.tag}><Text style={rs.tagText}>{length.toUpperCase()}</Text></View>}
+              {tone   && <View style={rs.tag}><Text style={rs.tagText}>{tone.toUpperCase()}</Text></View>}
             </View>
 
-            {/* ── Editable story body ── */}
-            <View style={rs.bodyFieldWrap}>
-              <Text style={rs.bodyFieldHint}>STORY</Text>
+            {/* Editable title — top overlay */}
+            <View style={rs.heroTitleWrap}>
+              {genre && <Text style={rs.heroGenre}>{genre.toUpperCase()}</Text>}
               <TextInput
-                style={rs.bodyField as any}
-                value={editedBody}
-                onChangeText={t => { setEditedBody(t); setSaved(false); }}
-                placeholder="Your story..."
-                placeholderTextColor={Colors.textMuted}
+                style={rs.heroTitleField as any}
+                value={editedTitle}
+                onChangeText={t => { setEditedTitle(t); setSaved(false); }}
+                placeholder="Story title..."
+                placeholderTextColor="rgba(255,255,255,0.4)"
+                maxLength={80}
                 multiline
-                textAlignVertical="top"
-                scrollEnabled={false}
-                maxLength={8000}
               />
+              {protagonist ? <Text style={rs.heroProt}>feat. {protagonist}</Text> : null}
             </View>
 
-            <View style={{ height: 24 }} />
-          </ScrollView>
+            {/* Story body overlay — bottom of canvas */}
+            <View style={rs.storyOverlay}>
+              <Text style={rs.bodyFieldHint}>STORY</Text>
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                style={{ maxHeight: 220 }}
+              >
+                <TextInput
+                  style={rs.bodyField as any}
+                  value={editedBody}
+                  onChangeText={t => { setEditedBody(t); setSaved(false); }}
+                  placeholder="Your story..."
+                  placeholderTextColor="rgba(255,255,255,0.35)"
+                  multiline
+                  textAlignVertical="top"
+                  scrollEnabled={false}
+                  maxLength={8000}
+                />
+              </ScrollView>
+            </View>
+
+            {/* Carousel dots */}
+            {images.length > 1 && (
+              <View style={rs.dotsRow} pointerEvents="none">
+                {images.map((_, i) => (
+                  <View key={i} style={[rs.dot, i === carouselIdx && rs.dotActive]} />
+                ))}
+              </View>
+            )}
+          </View>
 
           {/* ── Sticky bottom ── */}
           <View style={rs.stickyBottom as any}>
@@ -656,52 +649,49 @@ const rs = StyleSheet.create({
   homeIcon:    { fontSize: 20, color: Colors.textSecondary },
   headerTitle: { fontSize: Typography.sizes.sm, color: Colors.text, letterSpacing: 3, fontWeight: '700' },
 
-  scroll: { paddingBottom: 8 },
+  // Full-screen canvas — image + all overlays
+  canvas: { flex: 1, position: 'relative', overflow: 'hidden', backgroundColor: '#000' },
 
-  // Full-screen hero image block
-  heroWrap: { position: 'relative', overflow: 'hidden' },
+  // Gradient vignette: dark top, clear middle, heavy dark bottom for text readability
   heroVignette: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 2,
     ...(Platform.OS === 'web' ? {
-      background: 'linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.0) 40%, rgba(0,0,0,0.0) 65%, rgba(0,0,0,0.85) 100%)',
-    } : { backgroundColor: 'rgba(0,0,0,0.25)' }),
+      background: 'linear-gradient(to bottom, rgba(0,0,0,0.60) 0%, rgba(0,0,0,0.05) 38%, rgba(0,0,0,0.55) 62%, rgba(0,0,0,0.93) 100%)',
+    } : { backgroundColor: 'rgba(0,0,0,0.30)' }),
   },
 
-  // Tags row (top-left, inside hero)
-  tagRow: { position: 'absolute', top: 16, left: 14, zIndex: 10, flexDirection: 'row', gap: 6 },
+  // Tags — top-left
+  tagRow:  { position: 'absolute', top: 16, left: 14, zIndex: 10, flexDirection: 'row', gap: 6 },
   tag:     { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4, backgroundColor: 'rgba(201,168,76,0.18)', borderWidth: 1, borderColor: 'rgba(201,168,76,0.5)' },
   tagWatch:{ backgroundColor: 'rgba(80,120,255,0.18)', borderColor: 'rgba(80,120,255,0.5)' },
   tagText: { color: Colors.text, fontSize: 9, letterSpacing: 1.5, fontWeight: '700' },
 
-  // Title overlaid on hero — top area
-  heroTitleWrap: {
-    position: 'absolute', top: 52, left: 20, right: 20,
-    zIndex: 10, gap: 6,
-  },
-  heroTitleField: {
-    color: Colors.text,
-    fontSize: 28, fontFamily: Typography.fontSerif,
-    lineHeight: 36, fontWeight: '700',
+  // Title — top overlay
+  heroTitleWrap: { position: 'absolute', top: 52, left: 20, right: 20, zIndex: 10, gap: 4 },
+  heroGenre:     { color: Colors.gold, fontSize: 10, letterSpacing: 2.5, fontWeight: '700' },
+  heroTitleField:{
+    color: Colors.text, fontSize: 28,
+    fontFamily: Typography.fontSerif, lineHeight: 36, fontWeight: '700',
     outlineStyle: 'none',
   },
-  heroGenre: { color: Colors.gold, fontSize: 10, letterSpacing: 2.5, fontWeight: '700' },
-  heroProt:  { color: 'rgba(255,255,255,0.6)', fontSize: 12, fontStyle: 'italic' },
+  heroProt: { color: 'rgba(255,255,255,0.6)', fontSize: 12, fontStyle: 'italic' },
 
-  // Dots + scroll hint — bottom of hero
-  heroBottom: {
-    position: 'absolute', bottom: 20, left: 0, right: 0,
-    zIndex: 10, alignItems: 'center', gap: 8,
+  // Story body — overlay panel at bottom of canvas
+  storyOverlay: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    zIndex: 10,
+    paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16,
   },
-  dotsRow:   { flexDirection: 'row', gap: 6 },
-  dot:       { width: 5, height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.35)' },
-  dotActive: { backgroundColor: Colors.gold, width: 16 },
-  scrollHint:{ color: 'rgba(255,255,255,0.45)', fontSize: 11, letterSpacing: 1.5 },
 
-  // Editable body
-  bodyFieldWrap: { marginHorizontal: 20, marginTop: 20, borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.md, backgroundColor: Colors.surface, padding: 16 },
-  bodyFieldHint: { fontSize: 10, color: Colors.textMuted, letterSpacing: 2, marginBottom: 12 },
-  bodyField:     { color: Colors.textSecondary, fontSize: 15, fontFamily: Typography.fontSerif, lineHeight: 26, minHeight: 320, outlineStyle: 'none' },
+  // Carousel dots — sits just above the story overlay
+  dotsRow:  { position: 'absolute', bottom: 8, left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', gap: 6, zIndex: 11 },
+  dot:      { width: 5, height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.35)' },
+  dotActive:{ backgroundColor: Colors.gold, width: 16 },
+
+  // Story body (inside overlay)
+  bodyFieldHint: { fontSize: 10, color: 'rgba(255,255,255,0.45)', letterSpacing: 2, marginBottom: 10 },
+  bodyField:     { color: 'rgba(255,255,255,0.88)', fontSize: 15, fontFamily: Typography.fontSerif, lineHeight: 26, outlineStyle: 'none' },
 
   // Sticky bottom
   stickyBottom: {
