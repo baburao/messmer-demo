@@ -387,6 +387,7 @@ export default function StoryResultScreen({ navigation, route }: any) {
   const [carouselIdx,    setCarouselIdx]    = useState(0);
   const [regenInput,     setRegenInput]     = useState('');
   const [inputFocused,   setInputFocused]   = useState(false);
+  const regenInputRef = useRef<any>(null);
   const [endSheetOpen,   setEndSheetOpen]   = useState(false);
   const [videoModalOpen, setVideoModalOpen] = useState(false);
 
@@ -452,8 +453,8 @@ export default function StoryResultScreen({ navigation, route }: any) {
 
   const handleGoHome = () => navigation.navigate('Home');
 
-  // Smart button label/style
-  const showingSend = inputFocused && regenInput.trim().length > 0;
+  // Smart button: any text in input (regardless of focus) → show Send
+  const showingSend = regenInput.trim().length > 0;
 
   return (
     <KeyboardAvoidingView
@@ -532,7 +533,7 @@ export default function StoryResultScreen({ navigation, route }: any) {
               <ScrollView
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
-                style={{ maxHeight: 220 }}
+                style={{ maxHeight: SCREEN_H * 0.38 }}
               >
                 <TextInput
                   style={rs.bodyField as any}
@@ -571,7 +572,7 @@ export default function StoryResultScreen({ navigation, route }: any) {
                 <TouchableOpacity
                   key={s}
                   style={rs.chip}
-                  onPress={() => setRegenInput(s)}
+                  onPress={() => { setRegenInput(s); regenInputRef.current?.focus(); }}
                   activeOpacity={0.7}
                 >
                   <Text style={rs.chipText}>{s}</Text>
@@ -582,6 +583,7 @@ export default function StoryResultScreen({ navigation, route }: any) {
             {/* Regen input row — stop/send button lives inside on the right */}
             <View style={rs.regenRow}>
               <TextInput
+                ref={regenInputRef}
                 style={rs.regenInput as any}
                 value={regenInput}
                 onChangeText={setRegenInput}
