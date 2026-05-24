@@ -278,12 +278,13 @@ export default function StoryResultScreen({ navigation, route }: any) {
   const { genre, format, length, tone, protagonist } = route.params ?? {};
   const { width: SCREEN_W } = useWindowDimensions();
 
-  const [phase,        setPhase]        = useState<'generating' | 'result'>('generating');
-  const [saved,        setSaved]        = useState(false);
-  const [editedTitle,  setEditedTitle]  = useState('');
-  const [editedBody,   setEditedBody]   = useState('');
-  const [carouselIdx,  setCarouselIdx]  = useState(0);
-  const [regenInput,   setRegenInput]   = useState('');
+  const [phase,              setPhase]              = useState<'generating' | 'result'>('generating');
+  const [saved,              setSaved]              = useState(false);
+  const [editedTitle,        setEditedTitle]        = useState('');
+  const [editedBody,         setEditedBody]         = useState('');
+  const [carouselIdx,        setCarouselIdx]        = useState(0);
+  const [regenInput,         setRegenInput]         = useState('');
+  const [videoPromptVisible, setVideoPromptVisible] = useState(true);
 
   const story   = getFallbackStory(genre);
   const isWatch = format === 'watch';
@@ -440,6 +441,40 @@ export default function StoryResultScreen({ navigation, route }: any) {
 
           {/* ── Sticky bottom actions ──────────────────────── */}
           <View style={rs.stickyBottom as any}>
+
+            {/* Turn into a video? */}
+            {videoPromptVisible && (
+              <View style={rs.videoPrompt}>
+                <View style={rs.videoPromptLeft}>
+                  <View style={rs.videoPromptIconWrap}>
+                    <Text style={rs.videoPromptIcon}>▶</Text>
+                  </View>
+                  <View style={rs.videoPromptTextWrap}>
+                    <Text style={rs.videoPromptTitle}>Turn this into a video?</Text>
+                    <Text style={rs.videoPromptSub}>Create a cinematic version of your story</Text>
+                  </View>
+                </View>
+                <View style={rs.videoPromptBtns}>
+                  <TouchableOpacity
+                    style={rs.videoPromptLater}
+                    onPress={() => setVideoPromptVisible(false)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={rs.videoPromptLaterText}>Later</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={rs.videoPromptYes}
+                    onPress={() => {
+                      setVideoPromptVisible(false);
+                      navigation.navigate('StoryCreate');
+                    }}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={rs.videoPromptYesText}>Yes  →</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
 
             {/* Suggestion chips */}
             <ScrollView
@@ -598,6 +633,41 @@ const rs = StyleSheet.create({
       ? { backdropFilter: 'blur(18px)', backgroundColor: 'rgba(10,10,10,0.92)' }
       : {}),
   },
+
+  // "Turn into a video?" prompt
+  videoPrompt: {
+    flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: Radius.md,
+    borderWidth: 1, borderColor: 'rgba(80,120,255,0.35)',
+    backgroundColor: 'rgba(80,120,255,0.07)',
+    paddingHorizontal: 14, paddingVertical: 12,
+    gap: 10,
+  },
+  videoPromptLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
+  videoPromptIconWrap: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: 'rgba(80,120,255,0.15)',
+    borderWidth: 1, borderColor: 'rgba(80,120,255,0.4)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  videoPromptIcon:     { fontSize: 14, color: '#7090FF' },
+  videoPromptTextWrap: { flex: 1, gap: 2 },
+  videoPromptTitle:    { fontSize: 13, color: Colors.text, fontWeight: '600' },
+  videoPromptSub:      { fontSize: 11, color: Colors.textMuted },
+  videoPromptBtns:     { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  videoPromptLater: {
+    paddingHorizontal: 12, paddingVertical: 7,
+    borderRadius: Radius.full,
+    borderWidth: 1, borderColor: Colors.border,
+  },
+  videoPromptLaterText: { fontSize: 12, color: Colors.textMuted },
+  videoPromptYes: {
+    paddingHorizontal: 14, paddingVertical: 7,
+    borderRadius: Radius.full,
+    backgroundColor: '#5078FF',
+  },
+  videoPromptYesText: { fontSize: 12, color: '#fff', fontWeight: '700' },
 
   // Suggestion chips
   chipsRow: { paddingHorizontal: 2, gap: 8, flexDirection: 'row', paddingBottom: 2 },
