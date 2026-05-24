@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   Image, Animated, Platform, StatusBar, Easing,
-  TextInput, KeyboardAvoidingView, useWindowDimensions,
+  TextInput, KeyboardAvoidingView, Modal, useWindowDimensions,
 } from 'react-native';
 import { Colors, Typography, Radius, Spacing } from '../theme';
 import { saveGeneratedStory } from '../navigation/AppNavigator';
@@ -227,18 +227,14 @@ function GeneratingView({ onDone }: { onDone: () => void }) {
     Animated.timing(progress, {
       toValue: 1, duration: 2800, easing: Easing.out(Easing.quad), useNativeDriver: false,
     }).start();
-
     Animated.loop(
       Animated.sequence([
         Animated.timing(pulse, { toValue: 1,   duration: 700, useNativeDriver: true }),
         Animated.timing(pulse, { toValue: 0.4, duration: 700, useNativeDriver: true }),
       ])
     ).start();
-
-    const lineTimer = setInterval(() =>
-      setLineIdx(i => (i + 1) % GENERATING_LINES.length), 900);
+    const lineTimer = setInterval(() => setLineIdx(i => (i + 1) % GENERATING_LINES.length), 900);
     const doneTimer = setTimeout(onDone, 3000);
-
     return () => { clearInterval(lineTimer); clearTimeout(doneTimer); };
   }, []);
 
@@ -256,15 +252,121 @@ function GeneratingView({ onDone }: { onDone: () => void }) {
   );
 }
 const gs = StyleSheet.create({
-  wrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, paddingBottom: 80 },
-  icon: { fontSize: 48, color: Colors.gold },
-  title: { fontSize: Typography.sizes.sm, color: Colors.text, letterSpacing: 4, fontWeight: '700' },
-  hint: { fontSize: Typography.sizes.xs, color: Colors.textMuted, letterSpacing: 1.5, fontStyle: 'italic' },
-  barTrack: {
-    width: '70%', height: 2, borderRadius: 1,
-    backgroundColor: Colors.border, marginTop: 8, overflow: 'hidden',
-  },
-  barFill: { height: '100%', backgroundColor: Colors.gold, borderRadius: 1 },
+  wrap:     { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, paddingBottom: 80 },
+  icon:     { fontSize: 48, color: Colors.gold },
+  title:    { fontSize: Typography.sizes.sm, color: Colors.text, letterSpacing: 4, fontWeight: '700' },
+  hint:     { fontSize: Typography.sizes.xs, color: Colors.textMuted, letterSpacing: 1.5, fontStyle: 'italic' },
+  barTrack: { width: '70%', height: 2, borderRadius: 1, backgroundColor: Colors.border, marginTop: 8, overflow: 'hidden' },
+  barFill:  { height: '100%', backgroundColor: Colors.gold, borderRadius: 1 },
+});
+
+// ─── End / Publish sheet ───────────────────────────────────────────────────
+function EndPublishSheet({
+  visible, onClose, onDraft, onPublish,
+}: { visible: boolean; onClose: () => void; onDraft: () => void; onPublish: () => void }) {
+  return (
+    <Modal transparent animationType="slide" visible={visible} onRequestClose={onClose}>
+      <TouchableOpacity style={ep.backdrop} activeOpacity={1} onPress={onClose} />
+      <View style={ep.sheet}>
+        <View style={ep.handle} />
+        <Text style={ep.title}>FINISH STORY</Text>
+        <Text style={ep.sub}>What would you like to do with your story?</Text>
+
+        {/* Save as Draft */}
+        <TouchableOpacity style={ep.draftBtn} onPress={onDraft} activeOpacity={0.8}>
+          <View style={ep.draftIconWrap}>
+            <Text style={ep.draftIcon}>◈</Text>
+          </View>
+          <View style={ep.btnTextWrap}>
+            <Text style={ep.draftLabel}>Save as Draft</Text>
+            <Text style={ep.btnSub}>Keep it private, come back later</Text>
+          </View>
+          <Text style={ep.btnArrow}>›</Text>
+        </TouchableOpacity>
+
+        {/* Publish */}
+        <TouchableOpacity style={ep.publishBtn} onPress={onPublish} activeOpacity={0.85}>
+          <View style={ep.publishIconWrap}>
+            <Text style={ep.publishIcon}>★</Text>
+          </View>
+          <View style={ep.btnTextWrap}>
+            <Text style={ep.publishLabel}>Publish Story</Text>
+            <Text style={ep.publishSub}>Share it with the world</Text>
+          </View>
+          <Text style={ep.publishArrow}>›</Text>
+        </TouchableOpacity>
+      </View>
+    </Modal>
+  );
+}
+
+const ep = StyleSheet.create({
+  backdrop:       { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)' },
+  sheet:          { backgroundColor: '#141210', borderTopLeftRadius: 20, borderTopRightRadius: 20, borderTopWidth: 1, borderColor: Colors.border, paddingHorizontal: 20, paddingBottom: 44 },
+  handle:         { width: 36, height: 4, borderRadius: 2, backgroundColor: Colors.border, alignSelf: 'center', marginTop: 12, marginBottom: 16 },
+  title:          { fontSize: Typography.sizes.xs, color: Colors.gold, letterSpacing: 3, fontWeight: '700', textAlign: 'center', marginBottom: 4 },
+  sub:            { fontSize: Typography.sizes.sm, color: Colors.textMuted, textAlign: 'center', marginBottom: 24 },
+  btnTextWrap:    { flex: 1, gap: 3 },
+  btnArrow:       { fontSize: 20, color: Colors.textMuted },
+  btnSub:         { fontSize: 12, color: Colors.textMuted },
+
+  draftBtn:       { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 16, borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.md, paddingHorizontal: 16, marginBottom: 12, backgroundColor: Colors.surface },
+  draftIconWrap:  { width: 40, height: 40, borderRadius: 10, backgroundColor: Colors.background, borderWidth: 1, borderColor: Colors.border, alignItems: 'center', justifyContent: 'center' },
+  draftIcon:      { fontSize: 18, color: Colors.textSecondary },
+  draftLabel:     { fontSize: 16, color: Colors.text, fontWeight: '600' },
+
+  publishBtn:     { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 16, borderWidth: 1.5, borderColor: Colors.gold, borderRadius: Radius.md, paddingHorizontal: 16, backgroundColor: 'rgba(201,168,76,0.08)' },
+  publishIconWrap:{ width: 40, height: 40, borderRadius: 10, backgroundColor: 'rgba(201,168,76,0.15)', borderWidth: 1, borderColor: 'rgba(201,168,76,0.5)', alignItems: 'center', justifyContent: 'center' },
+  publishIcon:    { fontSize: 18, color: Colors.gold },
+  publishLabel:   { fontSize: 16, color: Colors.gold, fontWeight: '700' },
+  publishSub:     { fontSize: 12, color: 'rgba(201,168,76,0.7)' },
+  publishArrow:   { fontSize: 20, color: Colors.gold },
+});
+
+// ─── Video creation modal ─────────────────────────────────────────────────
+function VideoModal({
+  visible, onSkip, onYes,
+}: { visible: boolean; onSkip: () => void; onYes: () => void }) {
+  return (
+    <Modal transparent animationType="fade" visible={visible} onRequestClose={onSkip}>
+      <View style={vm.overlay}>
+        <View style={vm.card}>
+          {/* Icon */}
+          <View style={vm.iconWrap}>
+            <Text style={vm.icon}>▶</Text>
+          </View>
+
+          <Text style={vm.title}>Turn this into a video?</Text>
+          <Text style={vm.sub}>
+            Create a cinematic, full-screen visual experience from your story — like a short film.
+          </Text>
+
+          {/* Yes */}
+          <TouchableOpacity style={vm.yesBtn} onPress={onYes} activeOpacity={0.85}>
+            <Text style={vm.yesBtnText}>Yes, create video  →</Text>
+          </TouchableOpacity>
+
+          {/* Skip */}
+          <TouchableOpacity style={vm.skipBtn} onPress={onSkip} activeOpacity={0.7}>
+            <Text style={vm.skipBtnText}>Skip for now</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+const vm = StyleSheet.create({
+  overlay:  { flex: 1, backgroundColor: 'rgba(0,0,0,0.80)', alignItems: 'center', justifyContent: 'center', padding: 28 },
+  card:     { width: '100%', backgroundColor: '#1A1710', borderRadius: 20, borderWidth: 1, borderColor: Colors.border, padding: 28, alignItems: 'center', gap: 12 },
+  iconWrap: { width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(80,120,255,0.15)', borderWidth: 1.5, borderColor: 'rgba(80,120,255,0.5)', alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+  icon:     { fontSize: 24, color: '#7090FF' },
+  title:    { fontSize: 20, color: Colors.text, fontFamily: Typography.fontSerif, fontWeight: '600', textAlign: 'center' },
+  sub:      { fontSize: 13, color: Colors.textMuted, textAlign: 'center', lineHeight: 20 },
+  yesBtn:   { width: '100%', backgroundColor: '#5078FF', borderRadius: Radius.full, paddingVertical: 14, alignItems: 'center', marginTop: 8 },
+  yesBtnText: { fontSize: 14, color: '#fff', fontWeight: '700', letterSpacing: 1.5 },
+  skipBtn:  { paddingVertical: 10 },
+  skipBtnText: { fontSize: 13, color: Colors.textMuted },
 });
 
 // ─── Regenerate suggestions ────────────────────────────────────────────────
@@ -278,19 +380,20 @@ export default function StoryResultScreen({ navigation, route }: any) {
   const { genre, format, length, tone, protagonist } = route.params ?? {};
   const { width: SCREEN_W } = useWindowDimensions();
 
-  const [phase,              setPhase]              = useState<'generating' | 'result'>('generating');
-  const [saved,              setSaved]              = useState(false);
-  const [editedTitle,        setEditedTitle]        = useState('');
-  const [editedBody,         setEditedBody]         = useState('');
-  const [carouselIdx,        setCarouselIdx]        = useState(0);
-  const [regenInput,         setRegenInput]         = useState('');
-  const [videoPromptVisible, setVideoPromptVisible] = useState(true);
+  const [phase,          setPhase]          = useState<'generating' | 'result'>('generating');
+  const [saved,          setSaved]          = useState(false);
+  const [editedTitle,    setEditedTitle]    = useState('');
+  const [editedBody,     setEditedBody]     = useState('');
+  const [carouselIdx,    setCarouselIdx]    = useState(0);
+  const [regenInput,     setRegenInput]     = useState('');
+  const [inputFocused,   setInputFocused]   = useState(false);
+  const [endSheetOpen,   setEndSheetOpen]   = useState(false);
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
 
   const story   = getFallbackStory(genre);
   const isWatch = format === 'watch';
   const images  = story.images ?? [story.image];
 
-  // Pre-fill editable fields as soon as story is ready
   useEffect(() => {
     if (phase === 'result') {
       setEditedTitle(story.title);
@@ -299,26 +402,7 @@ export default function StoryResultScreen({ navigation, route }: any) {
     }
   }, [phase]);
 
-  // True once user has changed either field from the original
-  const hasEdited =
-    (editedTitle !== '' && editedTitle !== story.title) ||
-    (editedBody  !== '' && editedBody  !== story.body);
-
-  const handleSave = () => {
-    if (saved) return;
-    saveGeneratedStory(
-      {
-        title: editedTitle || story.title,
-        category: genre?.toUpperCase() ?? 'STORY',
-        desc: (editedBody || story.body).slice(0, 100) + '...',
-        image: story.image,
-      },
-      isWatch ? 'video' : 'storybook',
-    );
-    setSaved(true);
-  };
-
-  const handleRegenerate = (hint?: string) => {
+  const handleRegenerate = () => {
     setPhase('generating');
     setSaved(false);
     setEditedTitle('');
@@ -326,7 +410,50 @@ export default function StoryResultScreen({ navigation, route }: any) {
     setRegenInput('');
   };
 
+  // END tapped → open Draft/Publish sheet
+  const handleEnd = () => setEndSheetOpen(true);
+
+  // Draft chosen → save quietly and go home
+  const handleDraft = () => {
+    setEndSheetOpen(false);
+    saveGeneratedStory(
+      { title: editedTitle || story.title, category: genre?.toUpperCase() ?? 'STORY',
+        desc: (editedBody || story.body).slice(0, 100) + '...', image: story.image },
+      isWatch ? 'video' : 'storybook',
+    );
+    navigation.navigate('Home');
+  };
+
+  // Publish chosen → open video modal
+  const handlePublish = () => {
+    setEndSheetOpen(false);
+    saveGeneratedStory(
+      { title: editedTitle || story.title, category: genre?.toUpperCase() ?? 'STORY',
+        desc: (editedBody || story.body).slice(0, 100) + '...', image: story.image },
+      isWatch ? 'video' : 'storybook',
+    );
+    setVideoModalOpen(true);
+  };
+
+  // After video modal choice → navigate to story Shorts view
+  const goToStoryView = (createVideo: boolean) => {
+    setVideoModalOpen(false);
+    navigation.navigate('StoryDetail', {
+      story: {
+        id: 'default',
+        title: editedTitle || story.title,
+        category: genre?.toUpperCase() ?? 'STORY',
+        image: story.image,
+      },
+      fromPublish: true,
+      createVideo,
+    });
+  };
+
   const handleGoHome = () => navigation.navigate('Home');
+
+  // Smart button label/style
+  const showingSend = inputFocused && regenInput.trim().length > 0;
 
   return (
     <KeyboardAvoidingView
@@ -335,7 +462,7 @@ export default function StoryResultScreen({ navigation, route }: any) {
     >
       <StatusBar barStyle="light-content" />
 
-      {/* ── Header ─────────────────────────────────────────── */}
+      {/* ── Header ── */}
       <View style={rs.header as any}>
         <TouchableOpacity style={rs.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
           <Text style={rs.backArrow}>←</Text>
@@ -352,22 +479,20 @@ export default function StoryResultScreen({ navigation, route }: any) {
         <GeneratingView onDone={() => setPhase('result')} />
       ) : (
         <>
-          {/* ── Scrollable content ─────────────────────────── */}
+          {/* ── Scrollable content ── */}
           <ScrollView
             showsVerticalScrollIndicator={false}
             contentContainerStyle={rs.scroll}
             keyboardShouldPersistTaps="handled"
           >
-            {/* ── Carousel header ──────────────────────────── */}
+            {/* Carousel */}
             <View style={[rs.carouselWrap, { width: SCREEN_W }]}>
               <ScrollView
-                horizontal
-                pagingEnabled
+                horizontal pagingEnabled
                 showsHorizontalScrollIndicator={false}
                 scrollEventThrottle={16}
                 onMomentumScrollEnd={(e) => {
-                  const idx = Math.round(e.nativeEvent.contentOffset.x / SCREEN_W);
-                  setCarouselIdx(idx);
+                  setCarouselIdx(Math.round(e.nativeEvent.contentOffset.x / SCREEN_W));
                 }}
                 style={{ width: SCREEN_W, height: 300 }}
               >
@@ -379,7 +504,6 @@ export default function StoryResultScreen({ navigation, route }: any) {
                 ))}
               </ScrollView>
 
-              {/* Tags — top-left */}
               <View style={rs.tagRow}>
                 <View style={[rs.tag, isWatch && rs.tagWatch]}>
                   <Text style={rs.tagText}>{isWatch ? '▶  WATCH' : '◎  READ'}</Text>
@@ -388,7 +512,6 @@ export default function StoryResultScreen({ navigation, route }: any) {
                 {tone   && <View style={rs.tag}><Text style={rs.tagText}>{tone.toUpperCase()}</Text></View>}
               </View>
 
-              {/* Genre — bottom-left */}
               {genre && (
                 <View style={rs.coverGenreWrap}>
                   <Text style={rs.coverGenre}>{genre.toUpperCase()}</Text>
@@ -396,7 +519,6 @@ export default function StoryResultScreen({ navigation, route }: any) {
                 </View>
               )}
 
-              {/* Dot indicators — bottom-center */}
               {images.length > 1 && (
                 <View style={rs.dotsRow}>
                   {images.map((_, i) => (
@@ -406,7 +528,7 @@ export default function StoryResultScreen({ navigation, route }: any) {
               )}
             </View>
 
-            {/* ── Inline editable title ─────────────────────── */}
+            {/* Editable title */}
             <View style={rs.titleFieldWrap}>
               <TextInput
                 style={rs.titleField as any}
@@ -420,7 +542,7 @@ export default function StoryResultScreen({ navigation, route }: any) {
               />
             </View>
 
-            {/* ── Inline editable story body ────────────────── */}
+            {/* Editable body */}
             <View style={rs.bodyFieldWrap}>
               <Text style={rs.bodyFieldHint}>STORY</Text>
               <TextInput
@@ -439,42 +561,8 @@ export default function StoryResultScreen({ navigation, route }: any) {
             <View style={{ height: 24 }} />
           </ScrollView>
 
-          {/* ── Sticky bottom actions ──────────────────────── */}
+          {/* ── Sticky bottom ── */}
           <View style={rs.stickyBottom as any}>
-
-            {/* Turn into a video? */}
-            {videoPromptVisible && (
-              <View style={rs.videoPrompt}>
-                <View style={rs.videoPromptLeft}>
-                  <View style={rs.videoPromptIconWrap}>
-                    <Text style={rs.videoPromptIcon}>▶</Text>
-                  </View>
-                  <View style={rs.videoPromptTextWrap}>
-                    <Text style={rs.videoPromptTitle}>Turn this into a video?</Text>
-                    <Text style={rs.videoPromptSub}>Create a cinematic version of your story</Text>
-                  </View>
-                </View>
-                <View style={rs.videoPromptBtns}>
-                  <TouchableOpacity
-                    style={rs.videoPromptLater}
-                    onPress={() => setVideoPromptVisible(false)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={rs.videoPromptLaterText}>Later</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={rs.videoPromptYes}
-                    onPress={() => {
-                      setVideoPromptVisible(false);
-                      navigation.navigate('StoryCreate');
-                    }}
-                    activeOpacity={0.85}
-                  >
-                    <Text style={rs.videoPromptYesText}>Yes  →</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
 
             {/* Suggestion chips */}
             <ScrollView
@@ -494,38 +582,55 @@ export default function StoryResultScreen({ navigation, route }: any) {
               ))}
             </ScrollView>
 
-            {/* Regenerate input row */}
+            {/* Regen input row */}
             <View style={rs.regenRow}>
               <TextInput
                 style={rs.regenInput as any}
                 value={regenInput}
                 onChangeText={setRegenInput}
+                onFocus={() => setInputFocused(true)}
+                onBlur={() => setInputFocused(false)}
                 placeholder="Tell it what to change..."
                 placeholderTextColor={Colors.textMuted}
                 returnKeyType="send"
-                onSubmitEditing={() => handleRegenerate(regenInput)}
+                onSubmitEditing={handleRegenerate}
               />
               <TouchableOpacity
                 style={rs.regenBtn}
-                onPress={() => handleRegenerate(regenInput)}
+                onPress={handleRegenerate}
                 activeOpacity={0.75}
               >
                 <Text style={rs.regenBtnIcon}>↺</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={[rs.regenBtn, rs.regenBtnSend]}
-                onPress={() => regenInput.trim() ? handleRegenerate(regenInput) : handleSave()}
-                activeOpacity={0.8}
-              >
-                <Text style={rs.regenBtnSendIcon}>
-                  {regenInput.trim() ? '→' : '★'}
-                </Text>
-              </TouchableOpacity>
             </View>
+
+            {/* Smart END / SEND button */}
+            <TouchableOpacity
+              style={[rs.endSendBtn, showingSend && rs.endSendBtnSend]}
+              onPress={showingSend ? handleRegenerate : handleEnd}
+              activeOpacity={0.85}
+            >
+              <Text style={[rs.endSendBtnText, showingSend && rs.endSendBtnTextSend]}>
+                {showingSend ? '→  SEND' : 'END STORY'}
+              </Text>
+            </TouchableOpacity>
 
           </View>
         </>
       )}
+
+      {/* ── Modals ── */}
+      <EndPublishSheet
+        visible={endSheetOpen}
+        onClose={() => setEndSheetOpen(false)}
+        onDraft={handleDraft}
+        onPublish={handlePublish}
+      />
+      <VideoModal
+        visible={videoModalOpen}
+        onSkip={() => goToStoryView(false)}
+        onYes={() => goToStoryView(true)}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -538,91 +643,44 @@ const rs = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: Spacing.md, paddingVertical: Spacing.md,
     paddingTop: Platform.OS === 'android'
-      ? (StatusBar.currentHeight ?? 0) + Spacing.md
-      : Spacing.md,
+      ? (StatusBar.currentHeight ?? 0) + Spacing.md : Spacing.md,
     borderBottomWidth: 1, borderBottomColor: Colors.border,
     ...(Platform.OS === 'web'
-      ? { backdropFilter: 'blur(18px)', backgroundColor: 'rgba(10,10,10,0.85)' }
-      : {}),
+      ? { backdropFilter: 'blur(18px)', backgroundColor: 'rgba(10,10,10,0.85)' } : {}),
   },
-  backBtn:    { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  backArrow:  { fontSize: 22, color: Colors.gold },
-  homeIcon:   { fontSize: 20, color: Colors.textSecondary },
-  headerTitle:{ fontSize: Typography.sizes.sm, color: Colors.text, letterSpacing: 3, fontWeight: '700' },
+  backBtn:     { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  backArrow:   { fontSize: 22, color: Colors.gold },
+  homeIcon:    { fontSize: 20, color: Colors.textSecondary },
+  headerTitle: { fontSize: Typography.sizes.sm, color: Colors.text, letterSpacing: 3, fontWeight: '700' },
 
   scroll: { paddingBottom: 8 },
 
-  // ── Carousel ─────────────────────────────────────────────
+  // Carousel
   carouselWrap: { height: 300, position: 'relative', overflow: 'hidden' },
   slide:        { height: 300, position: 'relative' },
   cover:        { width: '100%', height: 300 },
-  coverGrad: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.28)',
-  },
-  tagRow: {
-    position: 'absolute', top: 14, left: 14,
-    flexDirection: 'row', gap: 6,
-  },
-  tag: {
-    paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4,
-    backgroundColor: 'rgba(201,168,76,0.18)',
-    borderWidth: 1, borderColor: 'rgba(201,168,76,0.5)',
-  },
-  tagWatch: {
-    backgroundColor: 'rgba(80,120,255,0.18)',
-    borderColor: 'rgba(80,120,255,0.5)',
-  },
-  tagText: { color: Colors.text, fontSize: 9, letterSpacing: 1.5, fontWeight: '700' },
+  coverGrad:    { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.28)' },
+  tagRow:       { position: 'absolute', top: 14, left: 14, flexDirection: 'row', gap: 6 },
+  tag:          { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4, backgroundColor: 'rgba(201,168,76,0.18)', borderWidth: 1, borderColor: 'rgba(201,168,76,0.5)' },
+  tagWatch:     { backgroundColor: 'rgba(80,120,255,0.18)', borderColor: 'rgba(80,120,255,0.5)' },
+  tagText:      { color: Colors.text, fontSize: 9, letterSpacing: 1.5, fontWeight: '700' },
+  coverGenreWrap: { position: 'absolute', bottom: 28, left: 0, right: 0, paddingHorizontal: 20, gap: 3 },
+  coverGenre:   { color: Colors.gold, fontSize: 10, letterSpacing: 2.5, fontWeight: '700' },
+  coverProt:    { color: Colors.textSecondary, fontSize: 12, fontStyle: 'italic' },
+  dotsRow:      { position: 'absolute', bottom: 10, left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', gap: 6 },
+  dot:          { width: 5, height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.35)' },
+  dotActive:    { backgroundColor: Colors.gold, width: 16 },
 
-  coverGenreWrap: {
-    position: 'absolute', bottom: 28, left: 0, right: 0,
-    paddingHorizontal: 20, gap: 3,
-  },
-  coverGenre:  { color: Colors.gold, fontSize: 10, letterSpacing: 2.5, fontWeight: '700' },
-  coverProt:   { color: Colors.textSecondary, fontSize: 12, fontStyle: 'italic' },
+  // Editable title
+  titleFieldWrap: { marginHorizontal: 20, marginTop: 20, borderBottomWidth: 1, borderBottomColor: Colors.borderGold, paddingBottom: 8 },
+  titleField:     { color: Colors.text, fontSize: 24, fontFamily: Typography.fontSerif, lineHeight: 32, outlineStyle: 'none' },
 
-  dotsRow: {
-    position: 'absolute', bottom: 10, left: 0, right: 0,
-    flexDirection: 'row', justifyContent: 'center', gap: 6,
-  },
-  dot: {
-    width: 5, height: 5, borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.35)',
-  },
-  dotActive: { backgroundColor: Colors.gold, width: 16 },
+  // Editable body
+  bodyFieldWrap: { marginHorizontal: 20, marginTop: 20, borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.md, backgroundColor: Colors.surface, padding: 16 },
+  bodyFieldHint: { fontSize: 10, color: Colors.textMuted, letterSpacing: 2, marginBottom: 12 },
+  bodyField:     { color: Colors.textSecondary, fontSize: 15, fontFamily: Typography.fontSerif, lineHeight: 26, minHeight: 320, outlineStyle: 'none' },
 
-  // ── Inline editable title ─────────────────────────────────
-  titleFieldWrap: {
-    marginHorizontal: 20, marginTop: 20,
-    borderBottomWidth: 1, borderBottomColor: Colors.borderGold,
-    paddingBottom: 8,
-  },
-  titleField: {
-    color: Colors.text, fontSize: 24,
-    fontFamily: Typography.fontSerif, lineHeight: 32,
-    outlineStyle: 'none',
-  },
-
-  // ── Inline editable body ──────────────────────────────────
-  bodyFieldWrap: {
-    marginHorizontal: 20, marginTop: 20,
-    borderWidth: 1, borderColor: Colors.border,
-    borderRadius: Radius.md, backgroundColor: Colors.surface,
-    padding: 16,
-  },
-  bodyFieldHint: {
-    fontSize: 10, color: Colors.textMuted,
-    letterSpacing: 2, marginBottom: 12,
-  },
-  bodyField: {
-    color: Colors.textSecondary, fontSize: 15,
-    fontFamily: Typography.fontSerif, lineHeight: 26,
-    minHeight: 320,
-    outlineStyle: 'none',
-  },
-
-  // ── Sticky bottom bar ─────────────────────────────────────
+  // Sticky bottom
   stickyBottom: {
     borderTopWidth: 1, borderTopColor: Colors.border,
     backgroundColor: Colors.background,
@@ -630,81 +688,42 @@ const rs = StyleSheet.create({
     paddingBottom: Platform.OS === 'ios' ? 28 : 16,
     gap: 10,
     ...(Platform.OS === 'web'
-      ? { backdropFilter: 'blur(18px)', backgroundColor: 'rgba(10,10,10,0.92)' }
-      : {}),
+      ? { backdropFilter: 'blur(18px)', backgroundColor: 'rgba(10,10,10,0.92)' } : {}),
   },
-
-  // "Turn into a video?" prompt
-  videoPrompt: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between',
-    borderRadius: Radius.md,
-    borderWidth: 1, borderColor: 'rgba(80,120,255,0.35)',
-    backgroundColor: 'rgba(80,120,255,0.07)',
-    paddingHorizontal: 14, paddingVertical: 12,
-    gap: 10,
-  },
-  videoPromptLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
-  videoPromptIconWrap: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: 'rgba(80,120,255,0.15)',
-    borderWidth: 1, borderColor: 'rgba(80,120,255,0.4)',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  videoPromptIcon:     { fontSize: 14, color: '#7090FF' },
-  videoPromptTextWrap: { flex: 1, gap: 2 },
-  videoPromptTitle:    { fontSize: 13, color: Colors.text, fontWeight: '600' },
-  videoPromptSub:      { fontSize: 11, color: Colors.textMuted },
-  videoPromptBtns:     { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  videoPromptLater: {
-    paddingHorizontal: 12, paddingVertical: 7,
-    borderRadius: Radius.full,
-    borderWidth: 1, borderColor: Colors.border,
-  },
-  videoPromptLaterText: { fontSize: 12, color: Colors.textMuted },
-  videoPromptYes: {
-    paddingHorizontal: 14, paddingVertical: 7,
-    borderRadius: Radius.full,
-    backgroundColor: '#5078FF',
-  },
-  videoPromptYesText: { fontSize: 12, color: '#fff', fontWeight: '700' },
 
   // Suggestion chips
-  chipsRow: { paddingHorizontal: 2, gap: 8, flexDirection: 'row', paddingBottom: 2 },
-  chip: {
-    paddingHorizontal: 12, paddingVertical: 7,
-    borderRadius: Radius.full,
-    borderWidth: 1, borderColor: Colors.border,
-    backgroundColor: Colors.surface,
-  },
-  chipText: { color: Colors.textSecondary, fontSize: 12, letterSpacing: 0.3 },
+  chipsRow:  { paddingHorizontal: 2, gap: 8, flexDirection: 'row', paddingBottom: 2 },
+  chip:      { paddingHorizontal: 12, paddingVertical: 7, borderRadius: Radius.full, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surface },
+  chipText:  { color: Colors.textSecondary, fontSize: 12, letterSpacing: 0.3 },
 
-  // Regenerate input row
+  // Regen input row (no send button — END handles it)
   regenRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    borderRadius: Radius.md,
-    borderWidth: 1, borderColor: Colors.border,
-    backgroundColor: Colors.surface,
-    paddingHorizontal: 4,
-    paddingVertical: 4,
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border,
+    backgroundColor: Colors.surface, paddingHorizontal: 4, paddingVertical: 4,
   },
-  regenInput: {
-    flex: 1,
-    color: Colors.text,
-    fontSize: 14,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    outlineStyle: 'none',
-  },
-  regenBtn: {
-    width: 40, height: 40, borderRadius: Radius.md,
-    alignItems: 'center', justifyContent: 'center',
-    backgroundColor: Colors.background,
-    borderWidth: 1, borderColor: Colors.border,
-  },
+  regenInput: { flex: 1, color: Colors.text, fontSize: 14, paddingHorizontal: 10, paddingVertical: 8, outlineStyle: 'none' },
+  regenBtn:   { width: 40, height: 40, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.background, borderWidth: 1, borderColor: Colors.border },
   regenBtnIcon: { fontSize: 18, color: Colors.textSecondary },
-  regenBtnSend: { backgroundColor: Colors.gold, borderColor: Colors.gold },
-  regenBtnSendIcon: { fontSize: 16, color: Colors.background, fontWeight: '700' },
+
+  // Smart END / SEND button
+  endSendBtn: {
+    borderRadius: Radius.md,
+    paddingVertical: 15,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: 'rgba(224,92,92,0.5)',
+    backgroundColor: 'rgba(224,92,92,0.07)',
+  },
+  endSendBtnSend: {
+    backgroundColor: Colors.gold,
+    borderColor: Colors.gold,
+  },
+  endSendBtnText: {
+    fontSize: Typography.sizes.sm, fontWeight: '700',
+    letterSpacing: 2, color: '#E05C5C',
+  },
+  endSendBtnTextSend: {
+    color: Colors.background,
+  },
 });

@@ -94,7 +94,8 @@ function Vignette() {
 
 // ─── Main Screen ──────────────────────────────────────────────────────────
 export default function StoryDetailScreen({ navigation, route }: any) {
-  const story = route?.params?.story;
+  const story       = route?.params?.story;
+  const fromPublish = route?.params?.fromPublish === true;
 
   const { width: W, height: H } = useWindowDimensions();
 
@@ -233,6 +234,31 @@ export default function StoryDetailScreen({ navigation, route }: any) {
       </View>
 
       {shareOpen && <ShareSheet onClose={() => setShareOpen(false)} />}
+
+      {/* ── Post-publish bottom bar ── */}
+      {fromPublish && (
+        <View style={s.publishBar as any}>
+          <TouchableOpacity
+            style={s.publishBarBtn}
+            onPress={() => navigation.navigate('StoryCreate')}
+            activeOpacity={0.8}
+          >
+            <Text style={s.publishBarIcon}>✦</Text>
+            <Text style={s.publishBarLabel}>New Story</Text>
+          </TouchableOpacity>
+
+          <View style={s.publishBarDivider} />
+
+          <TouchableOpacity
+            style={s.publishBarBtn}
+            onPress={() => navigation.navigate('Home')}
+            activeOpacity={0.8}
+          >
+            <Text style={s.publishBarIcon}>⌂</Text>
+            <Text style={s.publishBarLabel}>Go Home</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }
@@ -351,6 +377,25 @@ const s = StyleSheet.create({
   sideRatingStar:   { fontSize: 18, color: Colors.gold },
   sideLabel:        { fontSize: 10, color: 'rgba(255,255,255,0.78)', letterSpacing: 0.3 },
   sideLabelGold:    { color: Colors.gold, fontWeight: '700' },
+
+  // Post-publish bottom bar
+  publishBar: {
+    position: 'absolute',
+    bottom: 0, left: 0, right: 0,
+    zIndex: 400,
+    flexDirection: 'row',
+    borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(0,0,0,0.72)',
+    paddingBottom: Platform.OS === 'ios' ? 28 : 16,
+    ...(Platform.OS === 'web' ? {
+      backdropFilter: 'blur(16px)',
+      WebkitBackdropFilter: 'blur(16px)',
+    } : {}),
+  } as any,
+  publishBarBtn:     { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 14, gap: 4 },
+  publishBarDivider: { width: 1, backgroundColor: 'rgba(255,255,255,0.1)', marginVertical: 10 },
+  publishBarIcon:    { fontSize: 20, color: Colors.gold },
+  publishBarLabel:   { fontSize: 11, color: 'rgba(255,255,255,0.7)', letterSpacing: 1 },
 
   // Bottom-left content
   cardContent: {
