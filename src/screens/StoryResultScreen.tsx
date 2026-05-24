@@ -527,13 +527,13 @@ export default function StoryResultScreen({ navigation, route }: any) {
               {protagonist ? <Text style={rs.heroProt}>feat. {protagonist}</Text> : null}
             </View>
 
-            {/* Story body overlay — bottom of canvas */}
-            <View style={rs.storyOverlay}>
+            {/* Story body overlay — bottom of canvas, 30% screen height */}
+            <View style={[rs.storyOverlay, { height: SCREEN_H * 0.30 }]}>
               <Text style={rs.bodyFieldHint}>STORY</Text>
               <ScrollView
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
-                style={{ maxHeight: SCREEN_H * 0.38 }}
+                style={{ flex: 1 }}
               >
                 <TextInput
                   style={rs.bodyField as any}
