@@ -267,6 +267,12 @@ const gs = StyleSheet.create({
   barFill: { height: '100%', backgroundColor: Colors.gold, borderRadius: 1 },
 });
 
+// ─── Regenerate suggestions ────────────────────────────────────────────────
+const REGEN_SUGGESTIONS = [
+  'More suspense', 'Change the ending', 'Add a twist', 'Make it shorter',
+  'Darker tone', 'New protagonist',
+];
+
 // ─── Main Screen ───────────────────────────────────────────────────────────
 export default function StoryResultScreen({ navigation, route }: any) {
   const { genre, format, length, tone, protagonist } = route.params ?? {};
@@ -277,6 +283,7 @@ export default function StoryResultScreen({ navigation, route }: any) {
   const [editedTitle,  setEditedTitle]  = useState('');
   const [editedBody,   setEditedBody]   = useState('');
   const [carouselIdx,  setCarouselIdx]  = useState(0);
+  const [regenInput,   setRegenInput]   = useState('');
 
   const story   = getFallbackStory(genre);
   const isWatch = format === 'watch';
@@ -310,15 +317,15 @@ export default function StoryResultScreen({ navigation, route }: any) {
     setSaved(true);
   };
 
-  const handleRegenerate = () => {
+  const handleRegenerate = (hint?: string) => {
     setPhase('generating');
     setSaved(false);
     setEditedTitle('');
     setEditedBody('');
+    setRegenInput('');
   };
 
-  const handleCreateNew = () => navigation.navigate('StoryCreate');
-  const handleGoHome    = () => navigation.navigate('Home');
+  const handleGoHome = () => navigation.navigate('Home');
 
   return (
     <KeyboardAvoidingView
@@ -335,7 +342,9 @@ export default function StoryResultScreen({ navigation, route }: any) {
         <Text style={rs.headerTitle}>
           {phase === 'generating' ? 'GENERATING...' : 'YOUR STORY'}
         </Text>
-        <View style={{ width: 40 }} />
+        <TouchableOpacity style={rs.backBtn} onPress={handleGoHome} activeOpacity={0.7}>
+          <Text style={rs.homeIcon}>⌂</Text>
+        </TouchableOpacity>
       </View>
 
       {phase === 'generating' ? (
@@ -378,14 +387,10 @@ export default function StoryResultScreen({ navigation, route }: any) {
                 {tone   && <View style={rs.tag}><Text style={rs.tagText}>{tone.toUpperCase()}</Text></View>}
               </View>
 
-              {/* Genre + rating — bottom-left */}
+              {/* Genre — bottom-left */}
               {genre && (
                 <View style={rs.coverGenreWrap}>
                   <Text style={rs.coverGenre}>{genre.toUpperCase()}</Text>
-                  <View style={rs.ratingRow}>
-                    <Text style={rs.ratingStars}>★★★★★</Text>
-                    <Text style={rs.ratingValue}>4.8</Text>
-                  </View>
                   {protagonist ? <Text style={rs.coverProt}>feat. {protagonist}</Text> : null}
                 </View>
               )}
@@ -416,7 +421,7 @@ export default function StoryResultScreen({ navigation, route }: any) {
 
             {/* ── Inline editable story body ────────────────── */}
             <View style={rs.bodyFieldWrap}>
-              <Text style={rs.bodyFieldHint}>STORY  ·  tap to edit</Text>
+              <Text style={rs.bodyFieldHint}>STORY</Text>
               <TextInput
                 style={rs.bodyField as any}
                 value={editedBody}
@@ -435,45 +440,54 @@ export default function StoryResultScreen({ navigation, route }: any) {
 
           {/* ── Sticky bottom actions ──────────────────────── */}
           <View style={rs.stickyBottom as any}>
-            {/* Smart action bar */}
-            <View style={rs.storyActionBar}>
-              {hasEdited ? (
+
+            {/* Suggestion chips */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={rs.chipsRow}
+            >
+              {REGEN_SUGGESTIONS.map(s => (
                 <TouchableOpacity
-                  style={[rs.iconBtn, rs.iconBtnHighlight]}
-                  onPress={handleSave}
-                  activeOpacity={0.8}
+                  key={s}
+                  style={rs.chip}
+                  onPress={() => setRegenInput(s)}
+                  activeOpacity={0.7}
                 >
-                  <Text style={[rs.iconBtnIcon, rs.iconBtnIconGold]}>＋</Text>
-                  <Text style={[rs.iconBtnLabel, rs.iconBtnLabelGold]}>Add to Story</Text>
+                  <Text style={rs.chipText}>{s}</Text>
                 </TouchableOpacity>
-              ) : (
-                <TouchableOpacity style={rs.iconBtn} onPress={handleRegenerate} activeOpacity={0.7}>
-                  <Text style={rs.iconBtnIcon}>↺</Text>
-                  <Text style={rs.iconBtnLabel}>Regenerate</Text>
-                </TouchableOpacity>
-              )}
-              <View style={rs.iconDivider} />
-              <TouchableOpacity style={rs.iconBtn} onPress={handleCreateNew} activeOpacity={0.7}>
-                <Text style={rs.iconBtnIcon}>✦</Text>
-                <Text style={rs.iconBtnLabel}>New Story</Text>
+              ))}
+            </ScrollView>
+
+            {/* Regenerate input row */}
+            <View style={rs.regenRow}>
+              <TextInput
+                style={rs.regenInput as any}
+                value={regenInput}
+                onChangeText={setRegenInput}
+                placeholder="Tell it what to change..."
+                placeholderTextColor={Colors.textMuted}
+                returnKeyType="send"
+                onSubmitEditing={() => handleRegenerate(regenInput)}
+              />
+              <TouchableOpacity
+                style={rs.regenBtn}
+                onPress={() => handleRegenerate(regenInput)}
+                activeOpacity={0.75}
+              >
+                <Text style={rs.regenBtnIcon}>↺</Text>
               </TouchableOpacity>
-              <View style={rs.iconDivider} />
-              <TouchableOpacity style={rs.iconBtn} onPress={handleGoHome} activeOpacity={0.7}>
-                <Text style={rs.iconBtnIcon}>⌂</Text>
-                <Text style={rs.iconBtnLabel}>Home</Text>
+              <TouchableOpacity
+                style={[rs.regenBtn, rs.regenBtnSend]}
+                onPress={() => regenInput.trim() ? handleRegenerate(regenInput) : handleSave()}
+                activeOpacity={0.8}
+              >
+                <Text style={rs.regenBtnSendIcon}>
+                  {regenInput.trim() ? '→' : '★'}
+                </Text>
               </TouchableOpacity>
             </View>
 
-            {/* Save to My Profile CTA */}
-            <TouchableOpacity
-              style={[rs.actionBtn, saved && rs.actionBtnSaved]}
-              onPress={handleSave}
-              activeOpacity={0.85}
-            >
-              <Text style={[rs.actionBtnText, saved && rs.actionBtnTextSaved]}>
-                {saved ? '✓  SAVED TO MY PROFILE' : '★  SAVE TO MY PROFILE'}
-              </Text>
-            </TouchableOpacity>
           </View>
         </>
       )}
@@ -498,6 +512,7 @@ const rs = StyleSheet.create({
   },
   backBtn:    { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   backArrow:  { fontSize: 22, color: Colors.gold },
+  homeIcon:   { fontSize: 20, color: Colors.textSecondary },
   headerTitle:{ fontSize: Typography.sizes.sm, color: Colors.text, letterSpacing: 3, fontWeight: '700' },
 
   scroll: { paddingBottom: 8 },
@@ -531,9 +546,6 @@ const rs = StyleSheet.create({
   },
   coverGenre:  { color: Colors.gold, fontSize: 10, letterSpacing: 2.5, fontWeight: '700' },
   coverProt:   { color: Colors.textSecondary, fontSize: 12, fontStyle: 'italic' },
-  ratingRow:   { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 },
-  ratingStars: { fontSize: 12, color: Colors.gold, letterSpacing: 1 },
-  ratingValue: { fontSize: 12, color: Colors.gold, fontWeight: '700' },
 
   dotsRow: {
     position: 'absolute', bottom: 10, left: 0, right: 0,
@@ -587,34 +599,42 @@ const rs = StyleSheet.create({
       : {}),
   },
 
-  // Action bar (3-up row)
-  storyActionBar: {
+  // Suggestion chips
+  chipsRow: { paddingHorizontal: 2, gap: 8, flexDirection: 'row', paddingBottom: 2 },
+  chip: {
+    paddingHorizontal: 12, paddingVertical: 7,
+    borderRadius: Radius.full,
+    borderWidth: 1, borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+  },
+  chipText: { color: Colors.textSecondary, fontSize: 12, letterSpacing: 0.3 },
+
+  // Regenerate input row
+  regenRow: {
     flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     borderRadius: Radius.md,
     borderWidth: 1, borderColor: Colors.border,
     backgroundColor: Colors.surface,
-    overflow: 'hidden',
+    paddingHorizontal: 4,
+    paddingVertical: 4,
   },
-  iconBtn: {
-    flex: 1, alignItems: 'center', justifyContent: 'center',
-    paddingVertical: 13, gap: 4,
+  regenInput: {
+    flex: 1,
+    color: Colors.text,
+    fontSize: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    outlineStyle: 'none',
   },
-  iconBtnHighlight: { backgroundColor: 'rgba(201,168,76,0.1)' },
-  iconDivider:      { width: 1, backgroundColor: Colors.border },
-  iconBtnIcon:      { fontSize: 16, color: Colors.textSecondary },
-  iconBtnIconGold:  { color: Colors.gold },
-  iconBtnLabel:     { fontSize: 10, color: Colors.textMuted, letterSpacing: 1 },
-  iconBtnLabelGold: { color: Colors.gold, fontWeight: '700' },
-
-  // Save CTA
-  actionBtn: {
-    backgroundColor: Colors.gold, borderRadius: Radius.md,
-    paddingVertical: 15, alignItems: 'center',
+  regenBtn: {
+    width: 40, height: 40, borderRadius: Radius.md,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.background,
+    borderWidth: 1, borderColor: Colors.border,
   },
-  actionBtnSaved: {
-    backgroundColor: 'rgba(201,168,76,0.15)',
-    borderWidth: 1, borderColor: Colors.gold,
-  },
-  actionBtnText:      { fontSize: Typography.sizes.sm, color: Colors.background, fontWeight: '700', letterSpacing: 2 },
-  actionBtnTextSaved: { color: Colors.gold },
+  regenBtnIcon: { fontSize: 18, color: Colors.textSecondary },
+  regenBtnSend: { backgroundColor: Colors.gold, borderColor: Colors.gold },
+  regenBtnSendIcon: { fontSize: 16, color: Colors.background, fontWeight: '700' },
 });
