@@ -378,7 +378,7 @@ const REGEN_SUGGESTIONS = [
 // ─── Main Screen ───────────────────────────────────────────────────────────
 export default function StoryResultScreen({ navigation, route }: any) {
   const { genre, format, length, tone, protagonist } = route.params ?? {};
-  const { width: SCREEN_W } = useWindowDimensions();
+  const { width: SCREEN_W, height: SCREEN_H } = useWindowDimensions();
 
   const [phase,          setPhase]          = useState<'generating' | 'result'>('generating');
   const [saved,          setSaved]          = useState(false);
@@ -485,25 +485,30 @@ export default function StoryResultScreen({ navigation, route }: any) {
             contentContainerStyle={rs.scroll}
             keyboardShouldPersistTaps="handled"
           >
-            {/* Carousel */}
-            <View style={[rs.carouselWrap, { width: SCREEN_W }]}>
+            {/* ── Full-screen hero image with title overlaid ── */}
+            <View style={[rs.heroWrap, { width: SCREEN_W, height: SCREEN_H }]}>
+              {/* Horizontal image carousel */}
               <ScrollView
                 horizontal pagingEnabled
+                disableIntervalMomentum
                 showsHorizontalScrollIndicator={false}
                 scrollEventThrottle={16}
                 onMomentumScrollEnd={(e) => {
                   setCarouselIdx(Math.round(e.nativeEvent.contentOffset.x / SCREEN_W));
                 }}
-                style={{ width: SCREEN_W, height: 300 }}
+                style={StyleSheet.absoluteFillObject}
               >
                 {images.map((img, i) => (
-                  <View key={i} style={[rs.slide, { width: SCREEN_W }]}>
-                    <Image source={{ uri: img }} style={rs.cover} resizeMode="cover" />
-                    <View style={rs.coverGrad} />
+                  <View key={i} style={{ width: SCREEN_W, height: SCREEN_H }}>
+                    <Image source={{ uri: img }} style={StyleSheet.absoluteFillObject} resizeMode="cover" />
                   </View>
                 ))}
               </ScrollView>
 
+              {/* Gradient vignette */}
+              <View style={rs.heroVignette as any} pointerEvents="none" />
+
+              {/* Tags — top-left */}
               <View style={rs.tagRow}>
                 <View style={[rs.tag, isWatch && rs.tagWatch]}>
                   <Text style={rs.tagText}>{isWatch ? '▶  WATCH' : '◎  READ'}</Text>
@@ -512,37 +517,36 @@ export default function StoryResultScreen({ navigation, route }: any) {
                 {tone   && <View style={rs.tag}><Text style={rs.tagText}>{tone.toUpperCase()}</Text></View>}
               </View>
 
-              {genre && (
-                <View style={rs.coverGenreWrap}>
-                  <Text style={rs.coverGenre}>{genre.toUpperCase()}</Text>
-                  {protagonist ? <Text style={rs.coverProt}>feat. {protagonist}</Text> : null}
-                </View>
-              )}
+              {/* Editable title — top, overlaid on image */}
+              <View style={rs.heroTitleWrap}>
+                <TextInput
+                  style={rs.heroTitleField as any}
+                  value={editedTitle}
+                  onChangeText={t => { setEditedTitle(t); setSaved(false); }}
+                  placeholder="Story title..."
+                  placeholderTextColor="rgba(255,255,255,0.4)"
+                  maxLength={80}
+                  returnKeyType="next"
+                  multiline
+                />
+                {genre && <Text style={rs.heroGenre}>{genre.toUpperCase()}</Text>}
+                {protagonist ? <Text style={rs.heroProt}>feat. {protagonist}</Text> : null}
+              </View>
 
-              {images.length > 1 && (
-                <View style={rs.dotsRow}>
-                  {images.map((_, i) => (
-                    <View key={i} style={[rs.dot, i === carouselIdx && rs.dotActive]} />
-                  ))}
-                </View>
-              )}
+              {/* Dots + scroll hint — bottom */}
+              <View style={rs.heroBottom} pointerEvents="none">
+                {images.length > 1 && (
+                  <View style={rs.dotsRow}>
+                    {images.map((_, i) => (
+                      <View key={i} style={[rs.dot, i === carouselIdx && rs.dotActive]} />
+                    ))}
+                  </View>
+                )}
+                <Text style={rs.scrollHint}>↓  scroll to read</Text>
+              </View>
             </View>
 
-            {/* Editable title */}
-            <View style={rs.titleFieldWrap}>
-              <TextInput
-                style={rs.titleField as any}
-                value={editedTitle}
-                onChangeText={t => { setEditedTitle(t); setSaved(false); }}
-                placeholder="Story title..."
-                placeholderTextColor={Colors.textMuted}
-                maxLength={80}
-                returnKeyType="next"
-                multiline
-              />
-            </View>
-
-            {/* Editable body */}
+            {/* ── Editable story body ── */}
             <View style={rs.bodyFieldWrap}>
               <Text style={rs.bodyFieldHint}>STORY</Text>
               <TextInput
@@ -582,7 +586,7 @@ export default function StoryResultScreen({ navigation, route }: any) {
               ))}
             </ScrollView>
 
-            {/* Regen input row */}
+            {/* Regen input row — stop/send button lives inside on the right */}
             <View style={rs.regenRow}>
               <TextInput
                 style={rs.regenInput as any}
@@ -595,25 +599,24 @@ export default function StoryResultScreen({ navigation, route }: any) {
                 returnKeyType="send"
                 onSubmitEditing={handleRegenerate}
               />
-              <TouchableOpacity
-                style={rs.regenBtn}
-                onPress={handleRegenerate}
-                activeOpacity={0.75}
-              >
+
+              {/* Regenerate */}
+              <TouchableOpacity style={rs.regenBtn} onPress={handleRegenerate} activeOpacity={0.75}>
                 <Text style={rs.regenBtnIcon}>↺</Text>
               </TouchableOpacity>
-            </View>
 
-            {/* Smart END / SEND button */}
-            <TouchableOpacity
-              style={[rs.endSendBtn, showingSend && rs.endSendBtnSend]}
-              onPress={showingSend ? handleRegenerate : handleEnd}
-              activeOpacity={0.85}
-            >
-              <Text style={[rs.endSendBtnText, showingSend && rs.endSendBtnTextSend]}>
-                {showingSend ? '→  SEND' : 'END STORY'}
-              </Text>
-            </TouchableOpacity>
+              {/* Stop (END) ⟶ Send (→) when typing */}
+              <TouchableOpacity
+                style={[rs.stopBtn, showingSend && rs.stopBtnSend]}
+                onPress={showingSend ? handleRegenerate : handleEnd}
+                activeOpacity={0.85}
+              >
+                {showingSend
+                  ? <Text style={rs.stopBtnSendIcon}>→</Text>
+                  : <View style={rs.stopSquare} />
+                }
+              </TouchableOpacity>
+            </View>
 
           </View>
         </>
@@ -655,25 +658,45 @@ const rs = StyleSheet.create({
 
   scroll: { paddingBottom: 8 },
 
-  // Carousel
-  carouselWrap: { height: 300, position: 'relative', overflow: 'hidden' },
-  slide:        { height: 300, position: 'relative' },
-  cover:        { width: '100%', height: 300 },
-  coverGrad:    { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.28)' },
-  tagRow:       { position: 'absolute', top: 14, left: 14, flexDirection: 'row', gap: 6 },
-  tag:          { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4, backgroundColor: 'rgba(201,168,76,0.18)', borderWidth: 1, borderColor: 'rgba(201,168,76,0.5)' },
-  tagWatch:     { backgroundColor: 'rgba(80,120,255,0.18)', borderColor: 'rgba(80,120,255,0.5)' },
-  tagText:      { color: Colors.text, fontSize: 9, letterSpacing: 1.5, fontWeight: '700' },
-  coverGenreWrap: { position: 'absolute', bottom: 28, left: 0, right: 0, paddingHorizontal: 20, gap: 3 },
-  coverGenre:   { color: Colors.gold, fontSize: 10, letterSpacing: 2.5, fontWeight: '700' },
-  coverProt:    { color: Colors.textSecondary, fontSize: 12, fontStyle: 'italic' },
-  dotsRow:      { position: 'absolute', bottom: 10, left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', gap: 6 },
-  dot:          { width: 5, height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.35)' },
-  dotActive:    { backgroundColor: Colors.gold, width: 16 },
+  // Full-screen hero image block
+  heroWrap: { position: 'relative', overflow: 'hidden' },
+  heroVignette: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 2,
+    ...(Platform.OS === 'web' ? {
+      background: 'linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.0) 40%, rgba(0,0,0,0.0) 65%, rgba(0,0,0,0.85) 100%)',
+    } : { backgroundColor: 'rgba(0,0,0,0.25)' }),
+  },
 
-  // Editable title
-  titleFieldWrap: { marginHorizontal: 20, marginTop: 20, borderBottomWidth: 1, borderBottomColor: Colors.borderGold, paddingBottom: 8 },
-  titleField:     { color: Colors.text, fontSize: 24, fontFamily: Typography.fontSerif, lineHeight: 32, outlineStyle: 'none' },
+  // Tags row (top-left, inside hero)
+  tagRow: { position: 'absolute', top: 16, left: 14, zIndex: 10, flexDirection: 'row', gap: 6 },
+  tag:     { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4, backgroundColor: 'rgba(201,168,76,0.18)', borderWidth: 1, borderColor: 'rgba(201,168,76,0.5)' },
+  tagWatch:{ backgroundColor: 'rgba(80,120,255,0.18)', borderColor: 'rgba(80,120,255,0.5)' },
+  tagText: { color: Colors.text, fontSize: 9, letterSpacing: 1.5, fontWeight: '700' },
+
+  // Title overlaid on hero — top area
+  heroTitleWrap: {
+    position: 'absolute', top: 52, left: 20, right: 20,
+    zIndex: 10, gap: 6,
+  },
+  heroTitleField: {
+    color: Colors.text,
+    fontSize: 28, fontFamily: Typography.fontSerif,
+    lineHeight: 36, fontWeight: '700',
+    outlineStyle: 'none',
+  },
+  heroGenre: { color: Colors.gold, fontSize: 10, letterSpacing: 2.5, fontWeight: '700' },
+  heroProt:  { color: 'rgba(255,255,255,0.6)', fontSize: 12, fontStyle: 'italic' },
+
+  // Dots + scroll hint — bottom of hero
+  heroBottom: {
+    position: 'absolute', bottom: 20, left: 0, right: 0,
+    zIndex: 10, alignItems: 'center', gap: 8,
+  },
+  dotsRow:   { flexDirection: 'row', gap: 6 },
+  dot:       { width: 5, height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.35)' },
+  dotActive: { backgroundColor: Colors.gold, width: 16 },
+  scrollHint:{ color: 'rgba(255,255,255,0.45)', fontSize: 11, letterSpacing: 1.5 },
 
   // Editable body
   bodyFieldWrap: { marginHorizontal: 20, marginTop: 20, borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.md, backgroundColor: Colors.surface, padding: 16 },
@@ -696,34 +719,30 @@ const rs = StyleSheet.create({
   chip:      { paddingHorizontal: 12, paddingVertical: 7, borderRadius: Radius.full, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surface },
   chipText:  { color: Colors.textSecondary, fontSize: 12, letterSpacing: 0.3 },
 
-  // Regen input row (no send button — END handles it)
+  // Regen input row
   regenRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
+    flexDirection: 'row', alignItems: 'center', gap: 6,
     borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border,
     backgroundColor: Colors.surface, paddingHorizontal: 4, paddingVertical: 4,
   },
-  regenInput: { flex: 1, color: Colors.text, fontSize: 14, paddingHorizontal: 10, paddingVertical: 8, outlineStyle: 'none' },
-  regenBtn:   { width: 40, height: 40, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.background, borderWidth: 1, borderColor: Colors.border },
+  regenInput:   { flex: 1, color: Colors.text, fontSize: 14, paddingHorizontal: 10, paddingVertical: 8, outlineStyle: 'none' },
+  regenBtn:     { width: 40, height: 40, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.background, borderWidth: 1, borderColor: Colors.border },
   regenBtnIcon: { fontSize: 18, color: Colors.textSecondary },
 
-  // Smart END / SEND button
-  endSendBtn: {
-    borderRadius: Radius.md,
-    paddingVertical: 15,
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: 'rgba(224,92,92,0.5)',
-    backgroundColor: 'rgba(224,92,92,0.07)',
+  // Stop (■) → Send (→) button — rightmost in regen row
+  stopBtn: {
+    width: 40, height: 40, borderRadius: Radius.md,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(224,92,92,0.08)',
+    borderWidth: 1.5, borderColor: 'rgba(224,92,92,0.45)',
   },
-  endSendBtnSend: {
+  stopBtnSend: {
     backgroundColor: Colors.gold,
     borderColor: Colors.gold,
   },
-  endSendBtnText: {
-    fontSize: Typography.sizes.sm, fontWeight: '700',
-    letterSpacing: 2, color: '#E05C5C',
+  stopSquare: {
+    width: 12, height: 12, borderRadius: 2,
+    backgroundColor: '#E05C5C',
   },
-  endSendBtnTextSend: {
-    color: Colors.background,
-  },
+  stopBtnSendIcon: { fontSize: 18, color: Colors.background, fontWeight: '700' },
 });
